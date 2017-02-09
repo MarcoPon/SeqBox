@@ -1,0 +1,53 @@
+SeqBox - Sequenced Box container (SEQBOX/SBX)
+===========================================
+
+Encode a file in a container that can be reconstructed even after total loss of file system structures.
+Use a blocksize equal or submultiple of a sector/cluster size, with a minimal header that include block
+sequence number, checksum and other info. 
+Additional, non critical info are contained in block 0 (like name, file size, other attributes, etc.).
+
+Recovery can be performed simply scanning a disk / image, reading sector/cluster sized slices and checking
+block signature and then CRC to detect SeBox blocks. Then blocks can be sorted by UID's and sequence numbers.
+
+Optionally blocks can be freely duplicated and/or stored in different media to enhance recoverability.
+Eventually even a simil-RAID system could be implemented between blocks.
+
+The UID can be anything, as long as is unique for the specific application. 
+It could be random generated, or a hash of the file content, or a simple sequence, etc.
+
+Overhead is minimal: from 16B/512B (+1 512B block) to 16B/32KB (+1 32KB block)
+
+Could become part of a File System.
+
+
+Command line tools to:
+- encode file to SBX
+- decode SBX to file
+- utility to get info and scramble / sort / test / damage SBX file
+- recovery/scan tool to find/list and recover series of RBX files from a file (image/device)
+
+
+Common blocks header:
+
+  0-  2   3 Recoverable Block signature = 'SBX'
+  3-  3   1 Version byte 
+  4-  7	  4 file UID (MD5 or other 32bit hash) 
+  8-  9   2 Block CRC-16
+ 10- 13   4 Block sequence number
+ 14- 15   2 Flags (could be blocksize selectors, etc.)
+
+------------------------
+
+Block sequence = 0
+
+ 16- 19   4 unique identifier of parent dir (0 if root)
+ 20- 27   8 file lenght
+ 28-282 255 file/dir name (UTF-8)
+238-269  32 file content SHA-256 (optional)
+270-blksize padding
+------------------------
+
+Block sequence > 0:
+
+ 16-blocksize = data  
+
