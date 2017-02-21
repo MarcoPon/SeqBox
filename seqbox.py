@@ -62,17 +62,35 @@ def main():
     rbxblocksize = 512
     rbxhdrsize = 16
 
-    res = get_cmdline()
-    filename = res.filename
+    filename = "trid_linux_64.zip"
+    sbxfilename = "test.sbx"
+    
+    rbxmagic = b'SBx\x01'
+    rbxhdr = rbxmagic + bytes(rbxhdrsize-len(rbxmagic))
+    chunksize = rbxblocksize - rbxhdrsize
 
-    rbxhdr = bytes(rbxhdrsize)
     print("reading %s..." % filename)
-    f = open(filename, "rb")
-    totsize = 0
-    for data in chunked(f, rbxblocksize - rbxhdrsize):
-        totsize += len(data)
-        print(totsize)
-    f.close()
+    fin = open(filename, "rb")
+    fout = open(sbxfilename, "wb")
+
+    blocks = 0
+
+    while True:
+        buffer = fin.read(chunksize)
+        if len(buffer) < chunksize:
+            if len(buffer) == 0:
+                break
+            buffer += bytes(chunksize - len(buffer))
+        blocks += 1
+        #print(blocks, end = "\r")
+        data = rbxhdr + buffer
+        fout.write(data)
+                
+        
+    fout.close()
+    fin.close()
+
+
     print("ok!")
 
 

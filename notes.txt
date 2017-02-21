@@ -7,7 +7,7 @@ sequence number, checksum and other info.
 Additional, non critical info are contained in block 0 (like name, file size, other attributes, etc.).
 
 Recovery can be performed simply scanning a disk / image, reading sector/cluster sized slices and checking
-block signature and then CRC to detect SeBox blocks. Then blocks can be sorted by UID's and sequence numbers.
+block signature and then CRC to detect SeqBox blocks. Then blocks can be sorted by UID's and sequence numbers.
 
 Optionally blocks can be freely duplicated and/or stored in different media to enhance recoverability.
 Eventually even a simil-RAID system could be implemented between blocks.
@@ -29,7 +29,7 @@ Command line tools to:
 
 Common blocks header:
 
-  0-  2   3 Recoverable Block signature = 'SBX'
+  0-  2   3 Recoverable Block signature = 'SBx'
   3-  3   1 Version byte 
   4-  7	  4 file UID (MD5 or other 32bit hash) 
   8-  9   2 Block CRC-16
