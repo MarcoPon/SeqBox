@@ -1,0 +1,22 @@
+//--------------------------------------
+//--- 010 Editor v6.0.3 Binary Template
+//
+// File: seqbox.bt
+// Author: Marco Pontello
+// Revision:
+// Purpose: Explore SBX SeqBox container
+//--------------------------------------
+
+struct BLOCK {
+    struct HEADER {
+        char    signature[3];
+        byte    version; 
+        int     uid;
+        short   CRC16;
+        int     blocknum;
+        byte    flags[2];
+    } header;
+    byte    data[496];
+} block[3];
+
+

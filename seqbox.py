@@ -16,6 +16,8 @@ import sys
 import hashlib
 import argparse
 import tempfile
+import binascii
+import random
 
 PROGRAM_VER = "0.01a"
 
@@ -59,15 +61,22 @@ def get_cmdline():
 
 
 def main():
-    rbxblocksize = 512
-    rbxhdrsize = 16
+    sbxblocksize = 512
+    sbxhdrsize = 16
 
     filename = "trid_linux_64.zip"
     sbxfilename = "test.sbx"
     
-    rbxmagic = b'SBx\x01'
-    rbxhdr = rbxmagic + bytes(rbxhdrsize-len(rbxmagic))
-    chunksize = rbxblocksize - rbxhdrsize
+    sbxmagic = b'SBx'
+    sbxver = b'\x00' # for prototyping
+    sbxhdr = sbxmagic + sbxver
+
+    random.seed()
+    sbxuid = random.getrandbits(32).to_bytes(4, byteorder='little') # temporary
+    sbxhdr += sbxuid
+    sbxflags = b'\x00\x00'
+
+    chunksize = sbxblocksize - sbxhdrsize
 
     print("reading %s..." % filename)
     fin = open(filename, "rb")
@@ -80,18 +89,23 @@ def main():
         if len(buffer) < chunksize:
             if len(buffer) == 0:
                 break
-            buffer += bytes(chunksize - len(buffer))
+            buffer += b'\x1A' * (chunksize - len(buffer))
         blocks += 1
-        #print(blocks, end = "\r")
-        data = rbxhdr + buffer
-        fout.write(data)
+        #print(fin.tell(), " ",end = "\r")
+
+        crc = binascii.crc_hqx(buffer,0)
+        
+        blockhdr = (sbxhdr + crc.to_bytes(2,byteorder='little') +
+                blocks.to_bytes(4, byteorder='little') +
+                sbxflags)
+        fout.write(blockhdr+buffer)
                 
         
     fout.close()
     fin.close()
 
 
-    print("ok!")
+    print("\nok!")
 
 
 if __name__ == '__main__':
