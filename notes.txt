@@ -43,8 +43,8 @@ Block sequence = 0
  16- 19   4 unique identifier of parent dir (0 if root)
  20- 27   8 file lenght
  28-282 255 file/dir name (UTF-8)
-238-269  32 file content SHA-256 (optional)
-270-blksize padding
+283-314  32 file content SHA-256 (optional)
+315-blksize padding
 ------------------------
 
 Block sequence > 0:
