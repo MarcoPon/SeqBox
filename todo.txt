@@ -1,0 +1,1 @@
+26/02/2017 consider using multihash: http://multiformats.io/multihash/
