@@ -20,18 +20,14 @@ import binascii
 import random
 from functools import partial
 
-PROGRAM_VER = "0.01a"
+PROGRAM_VER = "0.02a"
 
-
-def errexit(mess, errlev=1):
+def errexit(errlev=1, mess=""):
     """Display an error and exit."""
-    print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
+    if mess != "":
+        print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
 
-
-def chunked(file, chunk_size):
-    """Helper function to read files in chunks."""
-    return iter(lambda: file.read(chunk_size), '')
 
 
 def MD5digest(filename=None, data=None):
@@ -67,13 +63,75 @@ def getsha256(filename):
             d.update(buf)
     return d.digest()
 
+def banner():
+    print("\nSeqBox - Sequenced Box Container v%s - (C) 2017 Marco Pontello\n"
+           % (PROGRAM_VER))
+
+def usage():
+    print("""usage:
+
+seqbox e file.sbx file encode file in file.sbx
+seqbox d file.sbx file decode file from file.sbx
+seqbox i file.sbx show information on file.sbx
+seqbox t file.sbx test file.sbx for integrity
+seqbox r [-d path] filenames [filenames ...] recover sbx files from filenames
+         and store in path
+    """)
+
+def getcmdargs():
+    res = {}
+
+    if len(sys.argv) == 1:
+        usage()
+        errexit(1)
+    elif sys.argv[1] in ["?", "-?", "-h", "--help"]:
+        usage()
+        errexit(0)
+
+    res["cmd"] = sys.argv[1].lower()
+
+    if res["cmd"] in ["e"]:
+        if len(sys.argv) == 4:
+            res["sbxfile"] = sys.argv[2]
+            res["file"] = sys.argv[3]
+        else:
+            usage()
+            errexit(1)
+    else:
+        errexit(1, "command %s not yet implemented." % res["cmd"])
+    
+    return res
+
+
+class sbxBlock():
+    """
+    Implement a basic SBX block
+    """
+    def __init__(self, ver):
+        self.ver = ver
+        if ver in [0,1]:
+            self.blocksize = 512
+            self.hdrsize = 16
+        self.reset()
+    def __str__(self):
+        return "SBX Block ver: '%i', size: %i, hdr size: %i" % \
+               (self.ver, self.blocksize, self.hdrsize)
+
+    def reset(self):
+        self.buffer = ""
+
+
 
 def main():
     sbxblocksize = 512
     sbxhdrsize = 16
 
-    filename = "trid_linux_64.zip"
-    sbxfilename = "test.sbx"
+    banner()
+
+    cmdline = getcmdargs()
+
+    filename = cmdline["file"]
+    sbxfilename = cmdline["sbxfile"]
     
     sbxmagic = b'SBx'
     sbxver = b'\x00' # for prototyping
@@ -116,7 +174,8 @@ def main():
         if len(buffer) < chunksize:
             if len(buffer) == 0:
                 break
-            buffer += b'\x1A' * (chunksize - len(buffer)) # padding the last block
+            #padding the last block
+            buffer += b'\x1A' * (chunksize - len(buffer)) 
         blocks += 1
         #print(fin.tell(), " ",end = "\r")
 
