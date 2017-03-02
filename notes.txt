@@ -31,20 +31,19 @@ Common blocks header:
 
   0-  2   3 Recoverable Block signature = 'SBx'
   3-  3   1 Version byte 
-  4-  7	  4 file UID (MD5 or other 32bit hash) 
-  8-  9   2 Block CRC-16
- 10- 13   4 Block sequence number
- 14- 15   2 Flags (could be blocksize selectors, etc.)
+  4-  5   2 Block CRC-16
+  6- 11	  6 file UID (MD5 or other 32bit hash) 
+ 12- 15   4 Block sequence number
 
 ------------------------
 
 Block sequence = 0
 
- 16- 19   4 unique identifier of parent dir (0 if root)
- 20- 27   8 file lenght
- 28-282 255 file/dir name (UTF-8)
-283-314  32 file content SHA-256 (optional)
-315-blksize padding
+ 16- 21   6 unique identifier of parent dir (0 if root)
+ 22- 29   8 file lenght
+ 30-284 255 file/dir name (UTF-8)
+285-316  32 file content crypto hash (optional)
+317-blksize padding
 ------------------------
 
 Block sequence > 0:

@@ -20,27 +20,13 @@ import binascii
 import random
 from functools import partial
 
-PROGRAM_VER = "0.02a"
+PROGRAM_VER = "0.03a"
 
 def errexit(errlev=1, mess=""):
     """Display an error and exit."""
     if mess != "":
         print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
-
-
-
-def MD5digest(filename=None, data=None):
-    """Return an MD5 digest for a file or a string."""
-    h = hashlib.md5()
-    if filename:
-        f = open(filename, "rb")
-        for data in chunked(f, 1024*1024):
-            h.update(data)
-        f.close()
-    elif data:
-        h.update(data)
-    return h.hexdigest()
 
 
 def get_cmdline():
@@ -107,24 +93,53 @@ class sbxBlock():
     """
     Implement a basic SBX block
     """
-    def __init__(self, ver):
+    def __init__(self, ver=0, uid="r"):
         self.ver = ver
         if ver in [0,1]:
             self.blocksize = 512
             self.hdrsize = 16
-        self.reset()
+        else:
+            raise version_not_supported #put in a proper exception
+        self.datasize = self.blocksize - self.hdrsize
+        self.magic = b'SBx' + ver.to_bytes(1, byteorder='big', signed=True)
+        self.blocknum = 0
+
+        if uid == "r":
+            random.seed()
+            self.uid = random.getrandbits(32)
+        else:
+            self.uid = 0
+
+        self.parent_uid = 0
+        self.metadata = {}
+        self.data = b""
+
     def __str__(self):
-        return "SBX Block ver: '%i', size: %i, hdr size: %i" % \
-               (self.ver, self.blocksize, self.hdrsize)
+        return "SBX Block ver: '%i', size: %i, hdr size: %i, data: %i" % \
+               (self.ver, self.blocksize, self.hdrsize, self.datasize)
 
-    def reset(self):
-        self.buffer = ""
-
+    def encode(self):
+        if self.blocknum == 0:
+            self.data = b""
+            if "filename" in self.metadata:
+                bb = self.metadata["filename"].encode()
+                self.data += b"NM" + len(bb).to_bytes(1, byteorder='little') + bb
+            if "filesize" in self.metadata:
+                bb = self.metadata["filesize"].to_bytes(8, byteorder='little', signed=True)
+                self.data += b"SZ" + len(bb).to_bytes(1, byteorder='little') + bb
+            if "hash" in self.metadata:
+                bb = self.metadata["hash"]
+                self.data += b"HS" + len(bb).to_bytes(1, byteorder='little') + bb
+        
+        data = self.data + b'\x1A' * (self.datasize - len(self.data))
+        buffer = (self.uid.to_bytes(6, byteorder='little') +
+                  self.blocknum.to_bytes(4, byteorder='little') +
+                  data)
+        crc = binascii.crc_hqx(data,0).to_bytes(2,byteorder='little')
+        return (self.magic + crc +buffer)
 
 
 def main():
-    sbxblocksize = 512
-    sbxhdrsize = 16
 
     banner()
 
@@ -133,58 +148,30 @@ def main():
     filename = cmdline["file"]
     sbxfilename = cmdline["sbxfile"]
     
-    sbxmagic = b'SBx'
-    sbxver = b'\x00' # for prototyping
-    sbxhdr = sbxmagic + sbxver
-
-    random.seed()
-    sbxuid = random.getrandbits(32).to_bytes(4, byteorder='little') # temporary
-    sbxhdr += sbxuid
-    sbxflags = b'\x00\x00'
-
-    chunksize = sbxblocksize - sbxhdrsize
-
     print("reading %s..." % filename)
     filesize = os.path.getsize(filename)
     sha256 = getsha256(filename)
     fin = open(filename, "rb")
     fout = open(sbxfilename, "wb")
 
-    blocks = 0
-    #write block 0 / header
-
-    parent_uid = 0
-    buffer = parent_uid.to_bytes(4, byteorder='little')
-    buffer += filesize.to_bytes(8, byteorder='little')
-    buffer += (bytes(filename, "utf-8")+b"\x00"*255)[:255]
-    buffer += sha256
-    buffer += b'\x1A' * (chunksize - len(buffer)) # padding
-
-    crc = binascii.crc_hqx(buffer,0)
+    sbx = sbxBlock()
     
-    blockhdr = (sbxhdr + crc.to_bytes(2,byteorder='little') +
-                blocks.to_bytes(4, byteorder='little') +
-                sbxflags)
-    fout.write(blockhdr+buffer)
-
+    #write block 0
+    sbx.metadata = {"filesize":filesize,
+                    "filename":filename,
+                    "hash":sha256}
+    fout.write(sbx.encode())
     
     #write all other blocks
     while True:
-        buffer = fin.read(chunksize)
-        if len(buffer) < chunksize:
+        buffer = fin.read(sbx.datasize)
+        if len(buffer) < sbx.datasize:
             if len(buffer) == 0:
                 break
-            #padding the last block
-            buffer += b'\x1A' * (chunksize - len(buffer)) 
-        blocks += 1
-        #print(fin.tell(), " ",end = "\r")
-
-        crc = binascii.crc_hqx(buffer,0)
-        
-        blockhdr = (sbxhdr + crc.to_bytes(2,byteorder='little') +
-                    blocks.to_bytes(4, byteorder='little') +
-                    sbxflags)
-        fout.write(blockhdr+buffer)
+        sbx.blocknum += 1
+        sbx.data = buffer
+        #print(fin.tell(), sbx.blocknum, " ",end = "\r")
+        fout.write(sbx.encode())
                 
         
     fout.close()
@@ -192,6 +179,7 @@ def main():
 
 
     print("\nok!")
+
 
 
 if __name__ == '__main__':

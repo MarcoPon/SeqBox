@@ -11,12 +11,11 @@ struct BLOCK {
     struct HEADER {
         char    signature[3];
         byte    version; 
-        int     uid;
         short   CRC16;
+        byte    uid[6];
         int     blocknum;
-        byte    flags[2];
     } header;
     byte    data[496];
-} block[3];
+} block[2];
 
 

@@ -1,1 +1,3 @@
-26/02/2017 consider using multihash: http://multiformats.io/multihash/
+- 26/02/2017 consider using multihash: http://multiformats.io/multihash/
+- 27/02/2017 blake2 woule probably be better, but require Python >=3.6
+- 29/02/2017 move CRC-16 at the end and include all the block
