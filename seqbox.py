@@ -106,7 +106,7 @@ class sbxBlock():
 
         if uid == "r":
             random.seed()
-            self.uid = random.getrandbits(32)
+            self.uid = random.getrandbits(48)
         else:
             self.uid = 0
 
@@ -135,8 +135,36 @@ class sbxBlock():
         buffer = (self.uid.to_bytes(6, byteorder='little') +
                   self.blocknum.to_bytes(4, byteorder='little') +
                   data)
-        crc = binascii.crc_hqx(data,0).to_bytes(2,byteorder='little')
-        return (self.magic + crc +buffer)
+        crc = binascii.crc_hqx(buffer,0).to_bytes(2,byteorder='little')
+        return (self.magic + crc + buffer)
+
+    def decode(self, buffer):
+        #check the basics
+        if len(buffer) != self.blocksize:
+            return False
+        if buffer[:3] != self.magic[:3]:
+            return False
+        print("Magic: OK!")
+        if not buffer[3] in [0,1]:
+            return False
+        print("Version:", buffer[3])
+
+        #check CRC of rest of the block
+        crc = int.from_bytes(buffer[4:6], byteorder='little') 
+        if crc != binascii.crc_hqx(buffer[6:],0):
+            return False
+        print("CRC: OK!")
+
+        self.uid = int.from_bytes(buffer[6:12], byteorder='little') 
+        self.blocknum = int.from_bytes(buffer[12:16], byteorder='little') 
+        self.data = buffer[16:]
+
+        if self.blocknum == 0:
+            #decode meta data
+            pass
+
+        return True
+        
 
 
 def main():
@@ -177,9 +205,44 @@ def main():
     fout.close()
     fin.close()
 
-
     print("\nok!")
 
+    ######################
+
+    cmdline["sbxfile"] = r"c:\t\test.sbx"
+    cmdline["filename"] = r"c:\t\out.zip"
+
+    print("\nTesting...")
+
+    sbxfilename = cmdline["sbxfile"]
+    filename = cmdline["filename"]
+    fin = open(sbxfilename, "rb")
+    fout= open(filename, "wb")
+
+    sbx = sbxBlock()
+    lastblocknum = 0
+    d = hashlib.sha256()
+    while True:
+        buffer = fin.read(sbx.blocksize)
+        if len(buffer) < sbx.blocksize:
+            break
+        if not sbx.decode(buffer):
+            errexit(errlev=1, mess="Invalid block.")
+        else:
+            print("Block #",sbx.blocknum)
+            if sbx.blocknum == 0:
+                #get metadata
+                pass
+            else:
+                fout.write(sbx.data)
+                d.update(sbx.data)
+    
+    fout.close()
+    fin.close()
+
+    print("File decoded.")
+    print("Hash:", d.hexdigest())
+    
 
 
 if __name__ == '__main__':
