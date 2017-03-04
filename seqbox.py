@@ -35,9 +35,9 @@ class sbxBlock():
 
         if uid == "r":
             random.seed()
-            self.uid = random.getrandbits(48)
+            self.uid = random.getrandbits(6*8).to_bytes(6, byteorder='big')
         else:
-            self.uid = 0
+            self.uid = (b'\x00'*6 + uid)[-6:]
 
         self.parent_uid = 0
         self.metadata = {}
@@ -52,19 +52,22 @@ class sbxBlock():
             self.data = b""
             if "filename" in self.metadata:
                 bb = self.metadata["filename"].encode()
-                self.data += b"NM" + len(bb).to_bytes(1, byteorder='little') + bb
+                self.data += b"FNM" + len(bb).to_bytes(1, byteorder='big') + bb
+            if "sbxname" in self.metadata:
+                bb = self.metadata["sbxname"].encode()
+                self.data += b"SNM" + len(bb).to_bytes(1, byteorder='big') + bb
             if "filesize" in self.metadata:
-                bb = self.metadata["filesize"].to_bytes(8, byteorder='little', signed=True)
-                self.data += b"SZ" + len(bb).to_bytes(1, byteorder='little') + bb
+                bb = self.metadata["filesize"].to_bytes(8, byteorder='big')
+                self.data += b"FSZ" + len(bb).to_bytes(1, byteorder='big') + bb
             if "hash" in self.metadata:
                 bb = self.metadata["hash"]
-                self.data += b"HS" + len(bb).to_bytes(1, byteorder='little') + bb
+                self.data += b"HSH" + len(bb).to_bytes(1, byteorder='big') + bb
         
         data = self.data + b'\x1A' * (self.datasize - len(self.data))
-        buffer = (self.uid.to_bytes(6, byteorder='little') +
-                  self.blocknum.to_bytes(4, byteorder='little') +
+        buffer = (self.uid +
+                  self.blocknum.to_bytes(4, byteorder='big') +
                   data)
-        crc = binascii.crc_hqx(buffer,0).to_bytes(2,byteorder='little')
+        crc = binascii.crc_hqx(buffer, self.ver).to_bytes(2,byteorder='big')
         return (self.magic + crc + buffer)
 
     def decode(self, buffer):
@@ -79,13 +82,13 @@ class sbxBlock():
         print("Version:", buffer[3])
 
         #check CRC of rest of the block
-        crc = int.from_bytes(buffer[4:6], byteorder='little') 
-        if crc != binascii.crc_hqx(buffer[6:],0):
+        crc = int.from_bytes(buffer[4:6], byteorder='big') 
+        if crc != binascii.crc_hqx(buffer[6:], self.ver):
             return False
         print("CRC: OK!")
 
-        self.uid = int.from_bytes(buffer[6:12], byteorder='little') 
-        self.blocknum = int.from_bytes(buffer[12:16], byteorder='little') 
+        self.uid = buffer[6:12]
+        self.blocknum = int.from_bytes(buffer[12:16], byteorder='big') 
         self.data = buffer[16:]
 
         if self.blocknum == 0:
