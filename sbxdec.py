@@ -22,7 +22,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.03a"
+PROGRAM_VER = "0.04a"
 
 
 def get_cmdline():
@@ -103,6 +103,8 @@ def main():
     sbx = seqbox.sbxBlock()
     lastblocknum = 0
     d = hashlib.sha256()
+    trimfilesize = False
+    filesize = 0
     while True:
         buffer = fin.read(sbx.blocksize)
         if len(buffer) < sbx.blocksize:
@@ -113,8 +115,15 @@ def main():
             print("Block #",sbx.blocknum)
             if sbx.blocknum == 0:
                 #get metadata
-                pass
+                metadata = sbx.metadata
+                if sbx.metadata["filesize"]:
+                    trimfilesize = True
             else:
+                #optimize size checking!
+                if trimfilesize:
+                    filesize += sbx.datasize
+                    if filesize > sbx.metadata["filesize"]:
+                        sbx.data = sbx.data[:-(filesize - sbx.metadata["filesize"])]
                 fout.write(sbx.data)
                 d.update(sbx.data)
     
@@ -122,8 +131,11 @@ def main():
     fin.close()
 
     print("File decoded.")
-    print("Hash:", d.hexdigest())
- 
+    print(d.hexdigest())
+    if d.digest() ==  metadata["hash"]:
+        print("Hash match!")
+    else:
+        errexit(1, "Hash mismatch! Decoded file corrupted!")
 
 if __name__ == '__main__':
     main()

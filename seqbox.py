@@ -52,16 +52,16 @@ class sbxBlock():
             self.data = b""
             if "filename" in self.metadata:
                 bb = self.metadata["filename"].encode()
-                self.data += b"FNM" + len(bb).to_bytes(1, byteorder='big') + bb
+                self.data += b"FNM" + bytes([len(bb)]) + bb
             if "sbxname" in self.metadata:
                 bb = self.metadata["sbxname"].encode()
-                self.data += b"SNM" + len(bb).to_bytes(1, byteorder='big') + bb
+                self.data += b"SNM" + bytes([len(bb)]) + bb
             if "filesize" in self.metadata:
                 bb = self.metadata["filesize"].to_bytes(8, byteorder='big')
-                self.data += b"FSZ" + len(bb).to_bytes(1, byteorder='big') + bb
+                self.data += b"FSZ" + bytes([len(bb)]) + bb
             if "hash" in self.metadata:
                 bb = self.metadata["hash"]
-                self.data += b"HSH" + len(bb).to_bytes(1, byteorder='big') + bb
+                self.data += b"HSH" + bytes([len(bb)]) + bb
         
         data = self.data + b'\x1A' * (self.datasize - len(self.data))
         buffer = (self.uid +
@@ -93,8 +93,24 @@ class sbxBlock():
 
         if self.blocknum == 0:
             #decode meta data
-            pass
-
+            p = 0
+            while p < (len(self.data)-3):
+                metaid = self.data[p:p+3]
+                p+=3
+                if metaid == b"\x1a\x1a\x1a":
+                    break
+                else:
+                    metalen = self.data[p]
+                    metabb = self.data[p+1:p+1+metalen]
+                    p = p + 1 + metalen    
+                    if metaid == b'FNM':
+                        self.metadata["filename"] = metabb.decode('utf-8')
+                    if metaid == b'SNM':
+                        self.metadata["sbxname"] = metabb.decode('utf-8')
+                    if metaid == b'FSZ':
+                        self.metadata["filesize"] = int.from_bytes(metabb, byteorder='big')
+                    if metaid == b'HSH':
+                        self.metadata["hash"] = metabb
         return True
 
 
