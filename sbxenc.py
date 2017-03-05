@@ -22,57 +22,31 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.04a"
+PROGRAM_VER = "0.5a"
+
+def banner():
+    """Display the usual presentation, version, (C) notices, etc."""
+    print("\nSeqBox - Sequenced Box container - Encoder v%s" % (PROGRAM_VER),
+          " - (C) 2017 by M.Pontello\n")
+
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
     parser = argparse.ArgumentParser(
-             description="Sequenced Box container",
+             description="create a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-/+')
-    parser.add_argument('--version', action='version',
-                        version='Sequenced Box container v%s' % PROGRAM_VER)
-    parser.add_argument("filename", action="store", nargs='?',
-                        help = "filename.", default="")
+    parser.add_argument("-v", "--version", action='version', 
+                        version='SBxEncoder v%s' % PROGRAM_VER)
+    parser.add_argument("filename", action="store", 
+                        help="filename to encode")
+    parser.add_argument("sbxfilename", action="store", nargs='?',
+                        help="sbx container filename")
+    parser.add_argument("-nm","--nometa", action="store_true", default=False,
+                        help="exclude matadata block")
+    parser.add_argument("-uid", action="store", default="r", type=str,
+                        help="use random or custom UID (up to 12 hexdigits)")
     res = parser.parse_args()
-    return res
-
-def getsha256(filename):
-    with open(filename, mode='rb') as f:
-        d = hashlib.sha256()
-        for buf in iter(partial(f.read, 1024*1024), b''):
-            d.update(buf)
-    return d.digest()
-
-def banner():
-    print("\nSeqBox - Sequenced Box Container v%s - (C) 2017 Marco Pontello\n"
-           % (PROGRAM_VER))
-
-def usage():
-    print("""usage:
-
-seqbox <file> [file.sbx] encode file in file.sbx
-    """)
-
-def getcmdargs():
-    res = {}
-
-    if len(sys.argv) == 1:
-        usage()
-        errexit(1)
-    elif sys.argv[1] in ["?", "-?", "-h", "--help"]:
-        usage()
-        errexit(0)
-
-    if len(sys.argv) > 1:
-        res["file"] = sys.argv[1]
-        res["sbxfile"] = res["file"] + ".sbx"
-    if len(sys.argv) > 2:
-        res["sbxfile"] = sys.argv[2]
-    if len(sys.argv) > 3:
-        usage()
-        errexit(1)
-
     return res
 
 
@@ -83,29 +57,55 @@ def errexit(errlev=1, mess=""):
     sys.exit(errlev)
       
 
+def getsha256(filename):
+    """SHA256 used to verify the integrity of the encoded file"""
+    with open(filename, mode='rb') as f:
+        d = hashlib.sha256()
+        for buf in iter(partial(f.read, 1024*1024), b''):
+            d.update(buf)
+    return d.digest()
+
+
 def main():
 
     banner()
+    cmdline = get_cmdline()
 
-    cmdline = getcmdargs()
+    filename = cmdline.filename
+    sbxfilename = cmdline.sbxfilename
+    if not sbxfilename:
+        sbxfilename = filename + ".sbx"
 
-    filename = cmdline["file"]
-    sbxfilename = cmdline["sbxfile"]
+    #parse eventual custom uid
+    uid = cmdline.uid
+    if uid !="r":
+        uid = uid[-12:]
+        try:
+            uid = int(uid, 16).to_bytes(6, byteorder='big')
+        except:
+            errexit(1, "invalid UID")
 
-    print("reading %s..." % filename)
+    if not os.path.exists(filename):
+        errexit(1, "file '%s' not found" % (filename))
     filesize = os.path.getsize(filename)
-    sha256 = getsha256(filename)
-    fin = open(filename, "rb")
+
     fout = open(sbxfilename, "wb")
 
-    sbx = seqbox.sbxBlock(uid=b'uiduid')
+    print("hashing file '%s'..." % (filename))
+    sha256 = getsha256(filename)
+
+    fin = open(filename, "rb")
+    print("encoding file '%s'..." % filename)
+
+    sbx = seqbox.sbxBlock(uid=uid)
     
-    #write block 0
-    sbx.metadata = {"filesize":filesize,
-                    "filename":filename,
-                    "sbxname":sbxfilename,
-                    "hash":sha256}
-    fout.write(sbx.encode())
+    #write metadata block 0
+    if not cmdline.nometa:
+        sbx.metadata = {"filesize":filesize,
+                        "filename":os.path.split(filename)[1],
+                        "sbxname":os.path.split(sbxfilename)[1],
+                        "hash":sha256}
+        fout.write(sbx.encode())
     
     #write all other blocks
     while True:
@@ -117,12 +117,15 @@ def main():
         sbx.data = buffer
         #print(fin.tell(), sbx.blocknum, " ",end = "\r")
         fout.write(sbx.encode())
-                
         
-    fout.close()
     fin.close()
+    fout.close()
 
-    print("\nok!")
+    totblocks = sbx.blocknum if cmdline.nometa else sbx.blocknum + 1
+    sbxfilesize = totblocks * sbx.blocksize
+    overhead = 100.0 * sbxfilesize / filesize - 100 if filesize > 0 else 0
+    print("\nsbx file size: %i - blocks: %i - overhead: %.1f%%" %
+          (sbxfilesize, totblocks, overhead))
 
 
 if __name__ == '__main__':

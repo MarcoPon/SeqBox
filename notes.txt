@@ -44,25 +44,21 @@ Common blocks header:
 
 Block sequence = 0
 
- 16- 21   6 unique identifier of parent dir (0 if root)
- 22- 29   8 file lenght
- 30-284 255 file/dir name (UTF-8)
-285-316  32 file content crypto hash (optional)
-317-nnn nnn encoded metadata
-nnn-blksize padding
+ 16-nnn nnn encoded metadata
+nnn-blksize padding (0x1A)
 ------------------------
 
 Block sequence > 0:
 
- 16-blocksize = data  
+ 16-nnn nnn data  
+nnn-blksize padding (0x1A) (for the last block)
+ 
 ------------------------
 
 metadata encoding:
-
 3 bytes str ID + 1 byte length + data
 
 ID:
-
 FNM filename (utf-8)
 SNM sbx filename (utf-8)
 FSZ filesize 8 bytes
