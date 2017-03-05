@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# Name:        seqbox.py
-# Purpose:     Sequenced Box container
+# SeqBox - Sequenced Box container module
 #
-# Author:      Marco Pontello
+# Created: 10/02/2017
 #
-# Created:     10/02/2017
-# Copyright:   (c) Mark 2017
-# Licence:     GPL-something?
+# Copyright (C) 2017 Marco Pontello - http://mark0.net/
+#
+# Licence:
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 #--------------------------------------------------------------------------
 
 import os
@@ -76,16 +88,13 @@ class sbxBlock():
             return False
         if buffer[:3] != self.magic[:3]:
             return False
-        print("Magic: OK!")
         if not buffer[3] in [0,1]:
             return False
-        print("Version:", buffer[3])
 
         #check CRC of rest of the block
         crc = int.from_bytes(buffer[4:6], byteorder='big') 
         if crc != binascii.crc_hqx(buffer[6:], self.ver):
             return False
-        print("CRC: OK!")
 
         self.uid = buffer[6:12]
         self.blocknum = int.from_bytes(buffer[12:16], byteorder='big') 

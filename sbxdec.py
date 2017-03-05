@@ -1,73 +1,63 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# Name:        seqbox.py
-# Purpose:     Sequenced Box container
+# SBxDec - Sequenced Box container Decoder
 #
-# Author:      Marco Pontello
+# Created: 10/02/2017
 #
-# Created:     10/02/2017
-# Copyright:   (c) Mark 2017
-# Licence:     GPL-something?
+# Copyright (C) 2017 Marco Pontello - http://mark0.net/
+#
+# Licence:
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 #--------------------------------------------------------------------------
 
 import os
 import sys
 import hashlib
 import argparse
-import tempfile
 import binascii
-import random
 from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.04a"
+PROGRAM_VER = "0.4a"
+
+
+def banner():
+    """Display the usual presentation, version, (C) notices, etc."""
+    print("\nSeqBox - Sequenced Box container - Decoder v%s" % (PROGRAM_VER),
+          " - (C) 2017 by M.Pontello\n")
 
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
     parser = argparse.ArgumentParser(
-             description="Sequenced Box container",
+             description="decode a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-/+')
-    parser.add_argument('--version', action='version',
-                        version='Sequenced Box container v%s' % PROGRAM_VER)
-    parser.add_argument("filename", action="store", nargs='?',
-                        help = "filename.", default="")
+    parser.add_argument("-v", "--version", action='version', 
+                        version='SBxDecoder v%s' % PROGRAM_VER)
+    parser.add_argument("sbxfilename", action="store",
+                        help="sbx container filename")
+    parser.add_argument("filename", action="store", nargs='?', 
+                        help="target filename")
+    parser.add_argument("-t","--test", action="store_true", default=False,
+                        help="test container integrity")
+    parser.add_argument("-i", "--info", action="store_true", default=False,
+                        help="show informations/metadata")
     res = parser.parse_args()
-    return res
-
-def banner():
-    print("\nSBxDec - Sequenced Box Decoder v%s - (C) 2017 Marco Pontello\n"
-           % (PROGRAM_VER))
-
-def usage():
-    print("""usage:
-
-sbxdec <file.sbx> [file] decode file from file.sbx
-sbxdec -i <file.sbx> show information on file.sbx
-sbxdec -t <file.sbx> test file.sbx for integrity
-    """)
-
-def getcmdargs():
-    res = {}
-    if len(sys.argv) == 1:
-        usage()
-        errexit(1)
-    elif sys.argv[1] in ["?", "-?", "-h", "--help"]:
-        usage()
-        errexit(0)
-
-    if len(sys.argv) > 1:
-        res["sbxfile"] = sys.argv[1]
-        res["file"] = res["sbxfile"] + ".out"
-    if len(sys.argv) > 2:
-        print("OK")
-        res["file"] = sys.argv[2]
-    if len(sys.argv) > 3:
-        usage()
-        errexit(1)
     return res
 
 
@@ -88,22 +78,59 @@ def getsha256(filename):
 def main():
 
     banner()
-    cmdline = getcmdargs()
+    cmdline = get_cmdline()
 
-    print("\nDecoding...")
+    sbxfilename = cmdline.sbxfilename
+    filename = cmdline.filename
 
-    sbxfilename = cmdline["sbxfile"]
-    filename = cmdline["file"]
+    if not os.path.exists(sbxfilename):
+        errexit(1, "sbx file '%s' not found" % (sbxfilename))
+    sbxfilesize = os.path.getsize(sbxfilename)
 
-    print(sbxfilename, "->", filename)
-
+    print("decoding '%s'..." % (sbxfilename))
     fin = open(sbxfilename, "rb")
+    sbx = seqbox.sbxBlock()
+    metadata = {}
+    metadatafound = False
+    trimfilesize = False
+
+    print("check first block.")    
+    buffer = fin.read(sbx.blocksize)
+    if not sbx.decode(buffer):
+        errexit(errlev=1, mess="invalid block.")
+    if sbx.blocknum > 1:
+        errexit(errlev=1, mess="blocks missing or out of order.")
+    elif sbx.blocknum == 0:
+        print("metadata block found.")
+        metadatafound = True
+        metadata = sbx.metadata
+        trimfilesize = True
+    else:
+        #first block is data, so reset from the start
+        fin.seek(0, 0)
+        
+
+    #display some info and stop
+    if cmdline.info:
+        print("\nSeqBox container info:")
+        print("  file size: %i bytes" % (sbxfilesize))
+        print("  blocks: %i" % (sbxfilesize / sbx.blocksize))
+        print("  version: %i" % (sbx.ver))
+        print("  UID: %s" % (binascii.hexlify(sbx.uid).decode()))
+        if metadatafound:
+            print("metadata:")
+            print("  SBx name : '%s'" % (metadata["sbxname"]))
+            print("  file name: '%s'" % (metadata["filename"]))
+            print("  filesize: %i bytes" % (metadata["filesize"]))
+            print("  SHA256: %s" % (binascii.hexlify(metadata["hash"]
+                                                   ).decode()))
+        
+        sys.exit(0)
+
     fout= open(filename, "wb")
 
-    sbx = seqbox.sbxBlock()
     lastblocknum = 0
     d = hashlib.sha256()
-    trimfilesize = False
     filesize = 0
     while True:
         buffer = fin.read(sbx.blocksize)
@@ -112,30 +139,24 @@ def main():
         if not sbx.decode(buffer):
             errexit(errlev=1, mess="Invalid block.")
         else:
-            print("Block #",sbx.blocknum)
-            if sbx.blocknum == 0:
-                #get metadata
-                metadata = sbx.metadata
-                if sbx.metadata["filesize"]:
-                    trimfilesize = True
-            else:
-                #optimize size checking!
-                if trimfilesize:
-                    filesize += sbx.datasize
-                    if filesize > sbx.metadata["filesize"]:
-                        sbx.data = sbx.data[:-(filesize - sbx.metadata["filesize"])]
-                fout.write(sbx.data)
-                d.update(sbx.data)
+            #optimize size checking!
+            if trimfilesize:
+                filesize += sbx.datasize
+                if filesize > metadata["filesize"]:
+                    sbx.data = sbx.data[:-(filesize - metadata["filesize"])]
+            fout.write(sbx.data)
+            d.update(sbx.data)
     
     fout.close()
     fin.close()
 
-    print("File decoded.")
-    print(d.hexdigest())
-    if d.digest() ==  metadata["hash"]:
-        print("Hash match!")
-    else:
-        errexit(1, "Hash mismatch! Decoded file corrupted!")
+    print("file decoded.")
+    if "hash" in metadata:
+        print("SHA256",d.hexdigest())
+        if d.digest() ==  metadata["hash"]:
+            print("hash match!")
+        else:
+            errexit(1, "hash mismatch! decoded file corrupted!")
 
 if __name__ == '__main__':
     main()

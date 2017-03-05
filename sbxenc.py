@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# Name:        seqbox.py
-# Purpose:     Sequenced Box container
+# SBxEnc - Sequenced Box container Encoder
 #
-# Author:      Marco Pontello
+# Created: 10/02/2017
 #
-# Created:     10/02/2017
-# Copyright:   (c) Mark 2017
-# Licence:     GPL-something?
+# Copyright (C) 2017 Marco Pontello - http://mark0.net/
+#
+# Licence:
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 #--------------------------------------------------------------------------
 
 import os
@@ -24,7 +36,7 @@ PROGRAM_VER = "0.6a"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
-    print("\nSeqBox - Sequenced Box container - encoder v%s" % (PROGRAM_VER),
+    print("\nSeqBox - Sequenced Box container - Encoder v%s" % (PROGRAM_VER),
           " - (C) 2017 by M.Pontello\n")
 
 
