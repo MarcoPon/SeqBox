@@ -15,18 +15,16 @@ import os
 import sys
 import hashlib
 import argparse
-import tempfile
 import binascii
-import random
 from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.5a"
+PROGRAM_VER = "0.6a"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
-    print("\nSeqBox - Sequenced Box container - Encoder v%s" % (PROGRAM_VER),
+    print("\nSeqBox - Sequenced Box container - encoder v%s" % (PROGRAM_VER),
           " - (C) 2017 by M.Pontello\n")
 
 
@@ -75,6 +73,9 @@ def main():
     sbxfilename = cmdline.sbxfilename
     if not sbxfilename:
         sbxfilename = filename + ".sbx"
+    elif os.path.isdir(sbxfilename):
+        sbxfilename = os.path.join(sbxfilename,
+                                   os.path.split(filename)[1] + ".sbx")
 
     #parse eventual custom uid
     uid = cmdline.uid
@@ -91,11 +92,15 @@ def main():
 
     fout = open(sbxfilename, "wb")
 
-    print("hashing file '%s'..." % (filename))
-    sha256 = getsha256(filename)
+    #calc hash - before all processing, and not while reading the file,
+    #just to be cautious
+    if not cmdline.nometa:
+        print("hashing file '%s'..." % (filename))
+        sha256 = getsha256(filename)
+        print("SHA256",binascii.hexlify(sha256).decode())
 
     fin = open(filename, "rb")
-    print("encoding file '%s'..." % filename)
+    print("creating file '%s'..." % sbxfilename)
 
     sbx = seqbox.sbxBlock(uid=uid)
     
@@ -108,6 +113,7 @@ def main():
         fout.write(sbx.encode())
     
     #write all other blocks
+    ticks = 0
     while True:
         buffer = fin.read(sbx.datasize)
         if len(buffer) < sbx.datasize:
@@ -115,16 +121,21 @@ def main():
                 break
         sbx.blocknum += 1
         sbx.data = buffer
-        #print(fin.tell(), sbx.blocknum, " ",end = "\r")
         fout.write(sbx.encode())
+        #some progress update
+        ticks +=1
+        if ticks == 29:
+            print("%.1f%%" % (fin.tell()*100.0/filesize), " ",end = "\r")
+            ticks = 0
         
+    print("100%  ")
     fin.close()
     fout.close()
 
     totblocks = sbx.blocknum if cmdline.nometa else sbx.blocknum + 1
     sbxfilesize = totblocks * sbx.blocksize
     overhead = 100.0 * sbxfilesize / filesize - 100 if filesize > 0 else 0
-    print("\nsbx file size: %i - blocks: %i - overhead: %.1f%%" %
+    print("sbx file size: %i - blocks: %i - overhead: %.1f%%" %
           (sbxfilesize, totblocks, overhead))
 
 

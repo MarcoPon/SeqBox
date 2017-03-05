@@ -22,7 +22,7 @@ class sbxBlock():
     """
     Implement a basic SBX block
     """
-    def __init__(self, ver=0, uid="r"):
+    def __init__(self, ver=1, uid="r"):
         self.ver = ver
         if ver in [0,1]:
             self.blocksize = 512
