@@ -4,18 +4,27 @@
 // File: seqbox.bt
 // Author: Marco Pontello
 // Revision:
-// Purpose: Explore SBX SeqBox container
+// Purpose: Explore SeqBox container
 //--------------------------------------
+
+local int BLOCKSIZE = 512;
+
+BigEndian();
+DisplayFormatHex();
 
 struct BLOCK {
     struct HEADER {
-        char    signature[3];
+        struct MAGIC {
+            char    signature[3];
+        } magic;
         byte    version; 
         short   CRC16;
-        byte    uid[6];
+        struct UID {
+            byte    uid[6];
+        } uid;
         int     blocknum;
     } header;
-    byte    data[496];
-} block[2];
+    byte    data[BLOCKSIZE - sizeof(header)];
+} block[FileSize() / BLOCKSIZE];
 
 

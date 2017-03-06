@@ -43,19 +43,19 @@ def banner():
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
     parser = argparse.ArgumentParser(
-             description="create a SeqBox container",
+             description="Create a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-/+')
     parser.add_argument("-v", "--version", action='version', 
                         version='SBxEncoder v%s' % PROGRAM_VER)
     parser.add_argument("filename", action="store", 
-                        help="filename to encode")
+                        help="File to encode")
     parser.add_argument("sbxfilename", action="store", nargs='?',
-                        help="sbx container filename")
+                        help="SBx container")
     parser.add_argument("-nm","--nometa", action="store_true", default=False,
-                        help="exclude matadata block")
+                        help="Exclude matadata block")
     parser.add_argument("-uid", action="store", default="r", type=str,
-                        help="use random or custom UID (up to 12 hexdigits)")
+                        help="Use random or custom UID (up to 12 hexdigits)")
     res = parser.parse_args()
     return res
 
@@ -107,12 +107,12 @@ def main():
     #calc hash - before all processing, and not while reading the file,
     #just to be cautious
     if not cmdline.nometa:
-        print("hashing file '%s'..." % (filename))
+        print("Hashing file '%s'..." % (filename))
         sha256 = getsha256(filename)
         print("SHA256",binascii.hexlify(sha256).decode())
 
     fin = open(filename, "rb")
-    print("creating file '%s'..." % sbxfilename)
+    print("Creating file '%s'..." % sbxfilename)
 
     sbx = seqbox.sbxBlock(uid=uid)
     
