@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.4a"
+PROGRAM_VER = "0.5a"
 
 
 def banner():
@@ -127,7 +127,16 @@ def main():
         
         sys.exit(0)
 
-    fout= open(filename, "wb")
+    #evaluate target filename
+    if not cmdline.test:
+        if not filename:
+            filename = sbxfilename + ".out"
+        elif os.path.isdir(filename):
+            filename = os.path.join(filename,
+                                       os.path.split(sbxfilename)[1] + ".out")
+
+        print("creating file '%s'..." % (filename))
+        fout= open(filename, "wb")
 
     lastblocknum = 0
     d = hashlib.sha256()
@@ -137,20 +146,25 @@ def main():
         if len(buffer) < sbx.blocksize:
             break
         if not sbx.decode(buffer):
-            errexit(errlev=1, mess="Invalid block.")
+            errexit(errlev=1, mess="invalid block.")
         else:
-            #optimize size checking!
+            if sbx.blocknum > lastblocknum+1:
+                errexit(errlev=1, mess="block %i out of order or missing."
+                         % (lastblocknum+1))    
+            lastblocknum += 1
             if trimfilesize:
                 filesize += sbx.datasize
                 if filesize > metadata["filesize"]:
                     sbx.data = sbx.data[:-(filesize - metadata["filesize"])]
-            fout.write(sbx.data)
             d.update(sbx.data)
+            if not cmdline.test:
+                fout.write(sbx.data)
     
-    fout.close()
     fin.close()
+    if not cmdline.test:
+        fout.close()
 
-    print("file decoded.")
+    print("sbx file decoded.")
     if "hash" in metadata:
         print("SHA256",d.hexdigest())
         if d.digest() ==  metadata["hash"]:

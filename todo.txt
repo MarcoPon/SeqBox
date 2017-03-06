@@ -6,4 +6,4 @@
 - 04/04/2017 complete sbxenc & sbxdec to use argparse
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
-- 
+- 06/03/2017 encoder & decoder completed. need to standardize casing.
