@@ -59,7 +59,7 @@ def get_cmdline():
                         help="recurse subdirs")
     parser.add_argument("-d", "--database", action="store", dest="dbfilename",
                         metavar="dbfilename", help="database for recovery info",
-                        default="sbxscan.db")
+                        default="sbxscan.db3")
     parser.add_argument("-l", "--list", action="store", dest="listfilename",
                         help=("report with detailed listing of scan results"),
                         metavar="listfilename", default="sbxscan.csv")
@@ -78,6 +78,11 @@ def errexit(errlev=1, mess=""):
         print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
       
+
+def dbCreateTables(c):
+    c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
+    c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
+    c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
 
 
 def main():
@@ -106,10 +111,7 @@ def main():
         os.remove(dbfilename)
     conn = sqlite3.connect(dbfilename)
     c = conn.cursor()
-    c.execute("CREATE TABLE files (id INTEGER, name TEXT)")
-    c.execute("CREATE TABLE sbx (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
-    c.execute("CREATE TABLE blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
-
+    dbCreateTables(c)
 
     #scan all the files/devices 
     sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
@@ -125,8 +127,9 @@ def main():
         filesize = os.path.getsize(filename)
         blocksnum = (filesize - offset) // sbx.blocksize
 
-        c.execute("INSERT INTO files (id, name) VALUES (?, ?)",
+        c.execute("INSERT INTO sbx_source (id, name) VALUES (?, ?)",
           (filenum, filename))
+        conn.commit()
 
         fin = open(filename, "rb")
         fin.seek(offset, 0)
@@ -144,25 +147,32 @@ def main():
                 if sbx.decode(buffer):
                     #used to keep a quick in memory list of the uids/files found
                     uids[sbx.uid] = True
-                    blocksfound+=1
+
                     #update blocks table
+                    blocksfound+=1
                     c.execute(
-                        "INSERT INTO blocks (uid, num, fid, pos) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO sbx_blocks (uid, num, fid, pos) VALUES (?, ?, ?, ?)",
                         (int.from_bytes(sbx.uid, byteorder='big'),
-                        sbx.blocknum, filenum, p))
+                         sbx.blocknum, filenum, p))
                     docommit = True
 
+                    #update meta table
                     if sbx.blocknum == 0:
                         blocksmetafound += 1
-                        
-
+                        c.execute(
+                            "INSERT INTO sbx_meta (uid , size, name, sbxname, fileid) VALUES (?, ?, ?, ?, ?)",
+                            (int.from_bytes(sbx.uid, byteorder='big'),
+                             sbx.metadata["filesize"],
+                             sbx.metadata["filename"], sbx.metadata["sbxname"],
+                             filenum))
+                        docommit = True
 
             #fakedelay
             #sleep(.01)            
             
             #status update
             if (time() > updatetime) or (b == blocksnum-1):
-                print("%5.1f%% blocks: %i - meta: %i - UIDs: %i - %.2fMB/s" %
+                print("%5.1f%% blocks: %i - meta: %i - files: %i - %.2fMB/s" %
                       ((b+1)*100.0/blocksnum, blocksfound, blocksmetafound,
                        len(uids), b*512/(1024*1024)/(time()-starttime)),
                       end = "\r", flush=True)
@@ -173,7 +183,6 @@ def main():
 
         fin.close()
         print()
-        
 
     c.close()
     conn.close()
