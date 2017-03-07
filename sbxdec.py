@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.5a"
+PROGRAM_VER = "0.51a"
 
 
 def banner():
@@ -44,19 +44,18 @@ def banner():
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
     parser = argparse.ArgumentParser(
-             description="Decode a SeqBox container",
+             description="decode a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-/+')
     parser.add_argument("-v", "--version", action='version', 
                         version='SBxDecoder v%s' % PROGRAM_VER)
-    parser.add_argument("sbxfilename", action="store",
-                        help="SBx container")
+    parser.add_argument("sbxfilename", action="store", help="SBx container")
     parser.add_argument("filename", action="store", nargs='?', 
-                        help="Target/decoded file")
+                        help="target/decoded file")
     parser.add_argument("-t","--test", action="store_true", default=False,
-                        help="Test container integrity")
+                        help="test container integrity")
     parser.add_argument("-i", "--info", action="store_true", default=False,
-                        help="Show informations/metadata")
+                        help="show informations/metadata")
     res = parser.parse_args()
     return res
 
@@ -87,41 +86,42 @@ def main():
         errexit(1, "sbx file '%s' not found" % (sbxfilename))
     sbxfilesize = os.path.getsize(sbxfilename)
 
-    print("Decoding '%s'..." % (sbxfilename))
+    print("decoding '%s'..." % (sbxfilename))
     fin = open(sbxfilename, "rb")
     sbx = seqbox.sbxBlock()
     metadata = {}
     metadatafound = False
     trimfilesize = False
 
-    print("Check first block")    
+    print("check first block")    
     buffer = fin.read(sbx.blocksize)
     if not sbx.decode(buffer):
         errexit(errlev=1, mess="invalid block")
     if sbx.blocknum > 1:
         errexit(errlev=1, mess="blocks missing or out of order")
     elif sbx.blocknum == 0:
-        print("Metadata block found")
+        print("metadata block found!")
         metadatafound = True
         metadata = sbx.metadata
         trimfilesize = True
     else:
         #first block is data, so reset from the start
+        print("no metadata available")
         fin.seek(0, 0)
         
 
     #display some info and stop
     if cmdline.info:
         print("\nSeqBox container info:")
-        print("  File size: %i bytes" % (sbxfilesize))
-        print("  Blocks: %i" % (sbxfilesize / sbx.blocksize))
-        print("  Version: %i" % (sbx.ver))
+        print("  file size: %i bytes" % (sbxfilesize))
+        print("  blocks: %i" % (sbxfilesize / sbx.blocksize))
+        print("  version: %i" % (sbx.ver))
         print("  UID: %s" % (binascii.hexlify(sbx.uid).decode()))
         if metadatafound:
-            print("Metadata:")
+            print("metadata:")
             print("  SBx name : '%s'" % (metadata["sbxname"]))
-            print("  File name: '%s'" % (metadata["filename"]))
-            print("  File size: %i bytes" % (metadata["filesize"]))
+            print("  file name: '%s'" % (metadata["filename"]))
+            print("  file size: %i bytes" % (metadata["filesize"]))
             print("  SHA256: %s" % (binascii.hexlify(metadata["hash"]
                                                    ).decode()))
         
@@ -135,7 +135,7 @@ def main():
             filename = os.path.join(filename,
                                        os.path.split(sbxfilename)[1] + ".out")
 
-        print("Creating file '%s'..." % (filename))
+        print("creating file '%s'..." % (filename))
         fout= open(filename, "wb")
 
     lastblocknum = 0
@@ -164,11 +164,11 @@ def main():
     if not cmdline.test:
         fout.close()
 
-    print("SBx file decoded")
+    print("SBx file decoded!")
     if "hash" in metadata:
         print("SHA256",d.hexdigest())
         if d.digest() ==  metadata["hash"]:
-            print("Hash match!")
+            print("hash match!")
         else:
             errexit(1, "hash mismatch! decoded file corrupted!")
 
