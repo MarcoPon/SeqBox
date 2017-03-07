@@ -30,6 +30,7 @@ import argparse
 import binascii
 import fnmatch
 from functools import partial
+from time import sleep, time
 import sqlite3
 
 import seqbox
@@ -109,11 +110,14 @@ def main():
     c.execute("CREATE TABLE sbx (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
     c.execute("CREATE TABLE blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
 
-    
+
     #scan all the files/devices 
     sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
     offset = cmdline.offset
     filenum = 0
+    uids = {}
+    magic = b'SBx' + cmdline.sbxver.to_bytes(1, byteorder='big', signed=True)
+
     for filename in filenames:
         filenum += 1
         print("scanning file/device '%s' (%i/%i)..." %
@@ -128,21 +132,45 @@ def main():
         fin.seek(offset, 0)
         blocksfound = 0
         blocksmetafound = 0
+        updatetime = time()
+        starttime = time()
+        docommit = False
         for b in range(blocksnum):
             p = fin.tell()
             buffer = fin.read(sbx.blocksize)
-            if sbx.decode(buffer):
-                blocksfound+=1
+            #check for magic
+            if buffer[:4] == magic:
+                #check for valid block
+                if sbx.decode(buffer):
+                    #used to keep a quick in memory list of the uids/files found
+                    uids[sbx.uid] = True
+                    blocksfound+=1
+                    #update blocks table
+                    c.execute(
+                        "INSERT INTO blocks (uid, num, fid, pos) VALUES (?, ?, ?, ?)",
+                        (int.from_bytes(sbx.uid, byteorder='big'),
+                        sbx.blocknum, filenum, p))
+                    docommit = True
 
-                c.execute("INSERT INTO blocks (uid, num, fid, pos) VALUES (?, ?, ?, ?)",
-                          (int.from_bytes(sbx.uid, byteorder='big'),
-                           sbx.blocknum, filenum, p))
+                    if sbx.blocknum == 0:
+                        blocksmetafound += 1
+                        
 
-                if sbx.blocknum == 0:
-                    blocksmetafound += 1
-                
-                print("%i/%i" % (blocksfound, blocksmetafound), end = "\r")
-        conn.commit()
+
+            #fakedelay
+            #sleep(.01)            
+            
+            #status update
+            if (time() > updatetime) or (b == blocksnum-1):
+                print("%5.1f%% blocks: %i - meta: %i - UIDs: %i - %.2fMB/s" %
+                      ((b+1)*100.0/blocksnum, blocksfound, blocksmetafound,
+                       len(uids), b*512/(1024*1024)/(time()-starttime)),
+                      end = "\r", flush=True)
+                if docommit:
+                    conn.commit()
+                    docommit = False
+                updatetime = time() + .5
+
         fin.close()
         print()
         
@@ -150,7 +178,7 @@ def main():
     c.close()
     conn.close()
 
-        
+    print("scan completed!")    
 
 
 if __name__ == '__main__':
