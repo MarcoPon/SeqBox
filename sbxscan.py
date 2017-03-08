@@ -64,8 +64,6 @@ def get_cmdline():
                         metavar="filename", default="sbxscan.csv")
     parser.add_argument("-o", "--offset", type=int, default=0,
                         help=("offset from the start"), metavar="n")
-    parser.add_argument("-b", "--buffer", type=int, default=128,
-                        help=("I/O buffer in KB"), metavar="n")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
                         help="SBx blocks version to search for", metavar="n")
     res = parser.parse_args()
@@ -113,8 +111,7 @@ def main():
     c = conn.cursor()
     c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
     c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
-    c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
-
+    c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fileid INTEGER, pos INTEGER )")
 
     #scan all the files/devices 
     sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
@@ -134,7 +131,7 @@ def main():
           (filenum, filename))
         conn.commit()
 
-        fin = open(filename, "rb", buffering=cmdline.buffer)
+        fin = open(filename, "rb", buffering=1024*1024)
         fin.seek(offset, 0)
         blocksfound = 0
         blocksmetafound = 0
@@ -154,7 +151,7 @@ def main():
                     #update blocks table
                     blocksfound+=1
                     c.execute(
-                        "INSERT INTO sbx_blocks (uid, num, fid, pos) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO sbx_blocks (uid, num, fileid, pos) VALUES (?, ?, ?, ?)",
                         (int.from_bytes(sbx.uid, byteorder='big'),
                          sbx.blocknum, filenum, p))
                     docommit = True

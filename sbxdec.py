@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.51a"
+PROGRAM_VER = "0.62a"
 
 
 def banner():
@@ -46,7 +46,7 @@ def get_cmdline():
     parser = argparse.ArgumentParser(
              description="decode a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-             prefix_chars='-/+')
+             prefix_chars='-+')
     parser.add_argument("-v", "--version", action='version', 
                         version='SBxDecoder v%s' % PROGRAM_VER)
     parser.add_argument("sbxfilename", action="store", help="SBx container")
@@ -66,10 +66,11 @@ def errexit(errlev=1, mess=""):
         print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
 
+
 def getsha256(filename):
-    with open(filename, mode='rb') as f:
+    with open(filename, mode='rb') as fin:
         d = hashlib.sha256()
-        for buf in iter(partial(f.read, 1024*1024), b''):
+        for buf in iter(partial(fin.read, 1024*1024), b''):
             d.update(buf)
     return d.digest()
 
@@ -87,7 +88,7 @@ def main():
     sbxfilesize = os.path.getsize(sbxfilename)
 
     print("decoding '%s'..." % (sbxfilename))
-    fin = open(sbxfilename, "rb")
+    fin = open(sbxfilename, "rb", buffering=1024*1024)
     sbx = seqbox.sbxBlock()
     metadata = {}
     metadatafound = False
@@ -136,7 +137,7 @@ def main():
                                        os.path.split(sbxfilename)[1] + ".out")
 
         print("creating file '%s'..." % (filename))
-        fout= open(filename, "wb")
+        fout= open(filename, "wb", buffering=1024*1024)
 
     lastblocknum = 0
     d = hashlib.sha256()

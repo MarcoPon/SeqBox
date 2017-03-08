@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.61a"
+PROGRAM_VER = "0.62a"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -45,7 +45,7 @@ def get_cmdline():
     parser = argparse.ArgumentParser(
              description="create a SeqBox container",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-             prefix_chars='-/+')
+             prefix_chars='-+')
     parser.add_argument("-v", "--version", action='version', 
                         version='SBxEncoder v%s' % PROGRAM_VER)
     parser.add_argument("filename", action="store", 
@@ -69,9 +69,9 @@ def errexit(errlev=1, mess=""):
 
 def getsha256(filename):
     """SHA256 used to verify the integrity of the encoded file"""
-    with open(filename, mode='rb') as f:
+    with open(filename, mode='rb') as fin:
         d = hashlib.sha256()
-        for buf in iter(partial(f.read, 1024*1024), b''):
+        for buf in iter(partial(fin.read, 1024*1024), b''):
             d.update(buf)
     return d.digest()
 
@@ -102,7 +102,7 @@ def main():
         errexit(1, "file '%s' not found" % (filename))
     filesize = os.path.getsize(filename)
 
-    fout = open(sbxfilename, "wb")
+    fout = open(sbxfilename, "wb", buffering=1024*1024)
 
     #calc hash - before all processing, and not while reading the file,
     #just to be cautious
@@ -111,7 +111,7 @@ def main():
         sha256 = getsha256(filename)
         print("SHA256",binascii.hexlify(sha256).decode())
 
-    fin = open(filename, "rb")
+    fin = open(filename, "rb", buffering=1024*1024)
     print("creating file '%s'..." % sbxfilename)
 
     sbx = seqbox.sbxBlock(uid=uid)
