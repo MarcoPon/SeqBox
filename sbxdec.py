@@ -56,6 +56,8 @@ def get_cmdline():
                         help="test container integrity")
     parser.add_argument("-i", "--info", action="store_true", default=False,
                         help="show informations/metadata")
+    parser.add_argument("-o", "--overwrite", action="store_true", default=False,
+                        help="overwrite existing file")
     res = parser.parse_args()
     return res
 
@@ -131,11 +133,19 @@ def main():
     #evaluate target filename
     if not cmdline.test:
         if not filename:
-            filename = sbxfilename + ".out"
+            if metadata["filename"]:
+                filename = metadata["filename"]
+            else:
+                filename = sbxfilename + ".out"
         elif os.path.isdir(filename):
-            filename = os.path.join(filename,
-                                       os.path.split(sbxfilename)[1] + ".out")
+            if metadata["filename"]:
+                filename = os.path.join(filename, metadata["filename"])
+            else:
+                filename = os.path.join(filename,
+                                        os.path.split(sbxfilename)[1] + ".out")
 
+        if os.path.exists(filename) and not cmdline.overwrite:
+            errexit(1, "target file '%s' already exists!" % (filename)) 
         print("creating file '%s'..." % (filename))
         fout= open(filename, "wb", buffering=1024*1024)
 
