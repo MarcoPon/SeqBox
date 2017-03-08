@@ -35,7 +35,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.10a"
+PROGRAM_VER = "0.60a"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -46,28 +46,28 @@ def banner():
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
     parser = argparse.ArgumentParser(
-             description=("scan files/disks for SBx blocks and create a "+
+             description=("scan files/devices for SBx blocks and create a "+
                           "detailed report plus an index to be used with "+
                           "SBxResq"),
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-             prefix_chars='-/+')
+             prefix_chars='-')
     parser.add_argument("-v", "--version", action='version', 
                         version='SBxScanner v%s' % PROGRAM_VER)
-    parser.add_argument("filenames", action="store", nargs="+",
-                        help="files to scan (can include paths & wildcards)")
-    parser.add_argument("-r", "--recurse", action="store_true", default=False,
-                        help="recurse subdirs")
+    parser.add_argument("filename", action="store", nargs="+",
+                        help="file(s) to scan")
     parser.add_argument("-d", "--database", action="store", dest="dbfilename",
-                        metavar="dbfilename", help="database for recovery info",
+                        metavar="filename",
+                        help="database with recovery info",
                         default="sbxscan.db3")
-    parser.add_argument("-l", "--list", action="store", dest="listfilename",
-                        help=("report with detailed listing of scan results"),
-                        metavar="listfilename", default="sbxscan.csv")
+    parser.add_argument("-r", "--report", action="store", dest="repfilename",
+                        help=("report with scan results"),
+                        metavar="filename", default="sbxscan.csv")
     parser.add_argument("-o", "--offset", type=int, default=0,
-                        help=("offset from the start (to be used with non-raw "+
-                              "disk images with some header"), metavar="n")
+                        help=("offset from the start"), metavar="n")
+    parser.add_argument("-b", "--buffer", type=int, default=128,
+                        help=("I/O buffer in KB"), metavar="n")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
-                        help="SBx blocks version to search for", metavar="v")
+                        help="SBx blocks version to search for", metavar="n")
     res = parser.parse_args()
     return res
 
@@ -77,12 +77,15 @@ def errexit(errlev=1, mess=""):
     if mess != "":
         print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
-      
 
-def dbCreateTables(c):
-    c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
-    c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
-    c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
+      
+def getFileSize(filename):
+    """Calc file size - works on devices too"""
+    ftemp = os.open(filename, os.O_RDONLY)
+    try:
+        return os.lseek(ftemp, 0, os.SEEK_END)
+    finally:
+        os.close(ftemp)
 
 
 def main():
@@ -91,27 +94,27 @@ def main():
     cmdline = get_cmdline()
 
     filenames = []
-    for filespec in cmdline.filenames:
-        filepath, filename = os.path.split(filespec)
-        if not filepath:
-            filepath = "."
-        if not filename:
-            filename = "*"
-        for wroot, wdirs, wfiles in os.walk(filepath):
-            if not cmdline.recurse:
-                wdirs[:] = []
-            for fn in fnmatch.filter(wfiles, filename):
-                filenames.append(os.path.join(wroot, fn))
+    for filename in cmdline.filename:
+        if os.path.exists(filename):
+            filenames.append(filename)
+        else:
+            errexit(1, "file '%s' not found!" % (filename))
     filenames = sorted(set(filenames), key=os.path.getsize)
 
-    #create database file and tables
     dbfilename = cmdline.dbfilename
+    if os.path.isdir(dbfilename):
+        dbfilename = os.path.join(dbfilename, "sbxscan.db3")
+
+    #create database tables
     print("creating '%s' database..." % (dbfilename))
     if os.path.exists(dbfilename):
         os.remove(dbfilename)
     conn = sqlite3.connect(dbfilename)
     c = conn.cursor()
-    dbCreateTables(c)
+    c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
+    c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
+    c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fid INTEGER, pos INTEGER )")
+
 
     #scan all the files/devices 
     sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
@@ -124,14 +127,14 @@ def main():
         filenum += 1
         print("scanning file/device '%s' (%i/%i)..." %
               (filename, filenum, len(filenames)))
-        filesize = os.path.getsize(filename)
+        filesize = getFileSize(filename)
         blocksnum = (filesize - offset) // sbx.blocksize
 
         c.execute("INSERT INTO sbx_source (id, name) VALUES (?, ?)",
           (filenum, filename))
         conn.commit()
 
-        fin = open(filename, "rb")
+        fin = open(filename, "rb", buffering=cmdline.buffer)
         fin.seek(offset, 0)
         blocksfound = 0
         blocksmetafound = 0
@@ -167,9 +170,6 @@ def main():
                              filenum))
                         docommit = True
 
-            #fakedelay
-            #sleep(.01)            
-            
             #status update
             if (time() > updatetime) or (b == blocksnum-1):
                 print("%5.1f%% blocks: %i - meta: %i - files: %i - %.2fMB/s" %
