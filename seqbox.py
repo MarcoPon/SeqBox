@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------
 # SeqBox - Sequenced Box container module
 #
-# Created: 10/02/2017
+# Created: 03/03/2017
 #
 # Copyright (C) 2017 Marco Pontello - http://mark0.net/
 #
