@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.62a"
+PROGRAM_VER = "0.63b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""

@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.62a"
+PROGRAM_VER = "0.63b"
 
 
 def banner():
@@ -157,7 +157,8 @@ def main():
         if len(buffer) < sbx.blocksize:
             break
         if not sbx.decode(buffer):
-            errexit(errlev=1, mess="invalid block")
+            errexit(errlev=1, mess="invalid block at offset %s" %
+                    (hex(fin.tell()-sbx.blocksize)))
         else:
             if sbx.blocknum > lastblocknum+1:
                 errexit(errlev=1, mess="block %i out of order or missing"

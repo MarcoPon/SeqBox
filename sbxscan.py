@@ -35,7 +35,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.60a"
+PROGRAM_VER = "0.61a"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -169,9 +169,12 @@ def main():
 
             #status update
             if (time() > updatetime) or (b == blocksnum-1):
+                etime = (time()-starttime)
+                if etime == 0:
+                    etime = 1
                 print("%5.1f%% blocks: %i - meta: %i - files: %i - %.2fMB/s" %
                       ((b+1)*100.0/blocksnum, blocksfound, blocksmetafound,
-                       len(uids), b*512/(1024*1024)/(time()-starttime)),
+                       len(uids), b*512/(1024*1024)/etime),
                       end = "\r", flush=True)
                 if docommit:
                     conn.commit()

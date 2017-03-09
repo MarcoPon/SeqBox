@@ -7,5 +7,7 @@
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
 
-- 06/03/2017 add switch --name on sbxdec to use meta filename as target
-             (if none specified) & --overwrite 
+- 08/03/2017 in sbxreco the files/uids to recover should also be read
+             from a filelist (can probably be done directly by argparse)
+- 09/03/2017 remember to check what happens with spaces in filename 
+             used to/from db
