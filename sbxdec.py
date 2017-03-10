@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.64b"
+PROGRAM_VER = "0.65b"
 
 
 def banner():
@@ -140,12 +140,12 @@ def main():
     #evaluate target filename
     if not cmdline.test:
         if not filename:
-            if metadata["filename"]:
+            if "filename" in metadata:
                 filename = metadata["filename"]
             else:
                 filename = sbxfilename + ".out"
         elif os.path.isdir(filename):
-            if metadata["filename"]:
+            if "filename" in metadata:
                 filename = os.path.join(filename, metadata["filename"])
             else:
                 filename = os.path.join(filename,

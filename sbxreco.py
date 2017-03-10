@@ -107,10 +107,18 @@ def dbGetBlocksListFromUID(c, uid):
     c.execute("SELECT num, fileid, pos from sbx_blocks where uid = '%i' group by num order by num" % (uid))
     return c.fetchall()
 
+def dbGetUIDsList(c):
+    c.execute("SELECT uid from sbx_blocks GROUP BY uid")
+    res = [row[0] for row in c.fetchall()]
+    return res
+
+def dbGetSourcesList(c):
+    c.execute("SELECT * FROM sbx_source")
+    return c.fetchall()
+
 
 def report(c):
     """Create a detailed report with the info obtained by SbxScan"""
-
     #test
     c.execute("SELECT uid from sbx_blocks group by uid order by uid")
     for row in c.fetchall():
@@ -150,38 +158,44 @@ def main():
 
     #build a list of uid to recover:
     uid_list = []
-    if cmdline.uid:
-        for hexuid in cmdline.uid:
-            if len(hexuid) % 2 != 0:
-                errexit(1, "invalid UID!")
-            uid = int.from_bytes(binascii.unhexlify(hexuid),
-                                 byteorder="big")
-            #just a stub to notify immediately
-            if dbGetBlocksCountFromUID(c, uid):
-                uid_list.append(uid)
-            else:
-                errexit(1,"no recoverable UID '%s'" % (hexuid))
-    if cmdline.sbx:
-        for sbxname in cmdline.sbx:
-            uid = dbGetUIDFromSbxName(c, sbxname)
-            if uid:
-                uid_list.append(uid)
-            else:
-                errexit(1,"no recoverable sbx file '%s'" % (sbxname))
-    if cmdline.file:
-        for filename in cmdline.file:
-            uid = dbGetUIDFromFileName(c, filename)
-            if uid:
-                uid_list.append(uid)
-            else:
-                errexit(1,"no recoverable file '%s'" % (filename))
+    if cmdline.all:
+        uid_list = dbGetUIDsList(c)
+    else:
+        if cmdline.uid:
+            for hexuid in cmdline.uid:
+                if len(hexuid) % 2 != 0:
+                    errexit(1, "invalid UID!")
+                uid = int.from_bytes(binascii.unhexlify(hexuid),
+                                     byteorder="big")
+                if dbGetBlocksCountFromUID(c, uid):
+                    uid_list.append(uid)
+                else:
+                    errexit(1,"no recoverable UID '%s'" % (hexuid))
+        if cmdline.sbx:
+            for sbxname in cmdline.sbx:
+                uid = dbGetUIDFromSbxName(c, sbxname)
+                if uid:
+                    uid_list.append(uid)
+                else:
+                    errexit(1,"no recoverable sbx file '%s'" % (sbxname))
+        if cmdline.file:
+            for filename in cmdline.file:
+                uid = dbGetUIDFromFileName(c, filename)
+                if uid:
+                    uid_list.append(uid)
+                else:
+                    errexit(1,"no recoverable file '%s'" % (filename))
+
+    if len(uid_list) == 0:
+        errexit(1, "nothing to recover!")
 
     print("recovering SBx files...")
     uid_list = sorted(set(uid_list))
 
-    #open the list of sources - need to be built !TEMP!
+    #open all the sources
     finlist = {}
-    finlist[1] = open(r"\t\msx.ima", "rb", buffering=1024*1024)
+    for key, value in dbGetSourcesList(c):
+        finlist[key] = open(value, "rb", buffering=1024*1024)
 
     uidcount = 0
     for uid in uid_list:
@@ -192,17 +206,31 @@ def main():
         blocksnum = dbGetBlocksCountFromUID(c, uid)
         print("  blocks: %i - size: %i bytes" %
               (blocksnum, blocksnum * BLOCKSIZE))
+        meta = dbGetMetaFromUID(c, uid)
+        if "sbxname" in meta:
+            sbxname = meta["sbxname"]
+        else:
+            #use hex uid as name if no metadata present
+            sbxname = (binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode() +
+                       ".sbx")
+        if cmdline.destpath:
+            sbxname = os.path.join(cmdline.destpath, sbxname)
+        print("  to: '%s'" % sbxname)
 
-        fout = open(r"\t\out.sbx", "wb", buffering = 1024*1024)
+        #should check overwrite flag
+        fout = open(sbxname, "wb", buffering = 1024*1024)
 
         blockdatalist = dbGetBlocksListFromUID(c, uid)
         for blockdata in blockdatalist:
-            print(blockdata)
             fin = finlist[blockdata[1]]
             bpos = blockdata[2]
             fin.seek(bpos, 0)
             buffer = fin.read(BLOCKSIZE)
+            #should fill in any missing blocks and warn
             fout.write(buffer)
+
+            #some progress report
+
         fout.close()
 
 
