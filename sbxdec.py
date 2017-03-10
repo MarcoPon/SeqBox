@@ -32,7 +32,7 @@ from functools import partial
 
 import seqbox
 
-PROGRAM_VER = "0.63b"
+PROGRAM_VER = "0.64b"
 
 
 def banner():
@@ -77,6 +77,15 @@ def getsha256(filename):
     return d.digest()
 
 
+def lastEofCount(data):
+    count = 0
+    for b in range(len(data)):
+        if data[-b-1] != 0x1a:
+            break
+        count +=1
+    return count
+
+
 def main():
 
     banner()
@@ -111,7 +120,6 @@ def main():
         #first block is data, so reset from the start
         print("no metadata available")
         fin.seek(0, 0)
-        
 
     #display some info and stop
     if cmdline.info:
@@ -127,7 +135,6 @@ def main():
             print("  file size: %i bytes" % (metadata["filesize"]))
             print("  SHA256: %s" % (binascii.hexlify(metadata["hash"]
                                                    ).decode()))
-        
         sys.exit(0)
 
     #evaluate target filename
@@ -176,13 +183,18 @@ def main():
     if not cmdline.test:
         fout.close()
 
-    print("SBx file decoded!")
+    print("SBx decodeding complete")
     if "hash" in metadata:
         print("SHA256",d.hexdigest())
         if d.digest() ==  metadata["hash"]:
             print("hash match!")
         else:
             errexit(1, "hash mismatch! decoded file corrupted!")
+    else:
+        #if filesize unknown, estimate based on 0x1a padding at block's end
+        c = lastEofCount(sbx.data[-4:])
+        print("EOF markers at the end of last block: %i/4" % c)
+
 
 if __name__ == '__main__':
     main()

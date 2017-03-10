@@ -3,7 +3,6 @@
 
 - 27/02/2017 blake2 woule probably be better, but require Python >=3.6
 
-- 04/04/2017 complete sbxenc & sbxdec to use argparse
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
 
