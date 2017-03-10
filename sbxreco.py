@@ -33,7 +33,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.62a"
+PROGRAM_VER = "0.63a"
 
 BLOCKSIZE = 512
 
@@ -195,7 +195,7 @@ def main():
     #open all the sources
     finlist = {}
     for key, value in dbGetSourcesList(c):
-        finlist[key] = open(value, "rb", buffering=1024*1024)
+        finlist[key] = open(value, "rb")
 
     uidcount = 0
     for uid in uid_list:
@@ -221,17 +221,45 @@ def main():
         fout = open(sbxname, "wb", buffering = 1024*1024)
 
         blockdatalist = dbGetBlocksListFromUID(c, uid)
+        #read 1 block to initialize the correct block parameters
+        #(needed for filling in missing blocks)
+        blockdata = blockdatalist[0]
+        sbx = seqbox.sbxBlock()
+        fin = finlist[blockdata[1]]
+        bpos = blockdata[2]
+        fin.seek(bpos, 0)
+        sbx.decode(fin.read(BLOCKSIZE))
+        
+        lastblock = -1
+        ticks = 0
+        missingblocks = 0
         for blockdata in blockdatalist:
+            bnum = blockdata[0]
+            #check for missing blocks and fill in
+            if bnum != lastblock +1 and bnum != 1:
+                for b in range(lastblock+1, bnum):
+                    sbx.blocknum = b
+                    sbx.data = bytes(sbx.datasize)
+                    buffer = sbx.encode()
+                    fout.write(buffer)
+                    missingblocks += 1
+
             fin = finlist[blockdata[1]]
             bpos = blockdata[2]
             fin.seek(bpos, 0)
             buffer = fin.read(BLOCKSIZE)
-            #should fill in any missing blocks and warn
             fout.write(buffer)
+            lastblock = bnum
 
             #some progress report
+            ticks +=1
+            if ticks == 290:
+                print("  %.1f%%" % (bnum*100.0/len(blockdatalist)), " ",
+                      "(missing blocks: %i)" % missingblocks , end = "\r")
+                ticks = 0
 
         fout.close()
+        print("  100%  ")
 
 
 
