@@ -30,10 +30,11 @@ import argparse
 import binascii
 from functools import partial
 import sqlite3
+from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.63a"
+PROGRAM_VER = "0.8.0b"
 
 BLOCKSIZE = 512
 
@@ -115,6 +116,17 @@ def dbGetUIDsList(c):
 def dbGetSourcesList(c):
     c.execute("SELECT * FROM sbx_source")
     return c.fetchall()
+
+
+def uniquifyFileName(filename):
+    count = 0
+    uniq = ""
+    name,ext = os.path.splitext(filename)
+    while os.path.exists(filename):
+        count += 1
+        uniq = "(%i)" % count
+        filename = name + uniq + ext
+    return filename
 
 
 def report(c):
@@ -217,7 +229,8 @@ def main():
             sbxname = os.path.join(cmdline.destpath, sbxname)
         print("  to: '%s'" % sbxname)
 
-        #should check overwrite flag
+        if not cmdline.overwrite:
+            sbxname = uniquifyFileName(sbxname)
         fout = open(sbxname, "wb", buffering = 1024*1024)
 
         blockdatalist = dbGetBlocksListFromUID(c, uid)
@@ -233,6 +246,8 @@ def main():
         lastblock = -1
         ticks = 0
         missingblocks = 0
+        updatetime = time() -1
+        maxbnum =  blockdatalist[-1][0]
         for blockdata in blockdatalist:
             bnum = blockdata[0]
             #check for missing blocks and fill in
@@ -252,14 +267,14 @@ def main():
             lastblock = bnum
 
             #some progress report
-            ticks +=1
-            if ticks == 290:
-                print("  %.1f%%" % (bnum*100.0/len(blockdatalist)), " ",
-                      "(missing blocks: %i)" % missingblocks , end = "\r")
-                ticks = 0
+            if time() > updatetime or bnum > len(blockdatalist):
+                print("  %.1f%%" % (bnum*100.0/maxbnum), " ",
+                      "(missing blocks: %i)" % missingblocks,
+                      end="\r", flush=True)
+                updatetime = time() + .5
 
         fout.close()
-        print("  100%  ")
+        print()
 
 
 

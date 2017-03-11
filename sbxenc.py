@@ -29,10 +29,11 @@ import hashlib
 import argparse
 import binascii
 from functools import partial
+from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.63b"
+PROGRAM_VER = "0.7.1b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -52,6 +53,8 @@ def get_cmdline():
                         help="file to encode")
     parser.add_argument("sbxfilename", action="store", nargs='?',
                         help="SBx container")
+    parser.add_argument("-o", "--overwrite", action="store_true", default=False,
+                        help="overwrite existing file")
     parser.add_argument("-nm","--nometa", action="store_true", default=False,
                         help="exclude matadata block")
     parser.add_argument("-uid", action="store", default="r", type=str,
@@ -88,7 +91,9 @@ def main():
     elif os.path.isdir(sbxfilename):
         sbxfilename = os.path.join(sbxfilename,
                                    os.path.split(filename)[1] + ".sbx")
-
+    if os.path.exists(sbxfilename) and not cmdline.overwrite:
+        errexit(1, "SBx file '%s' already exists!" % (sbxfilename))
+        
     #parse eventual custom uid
     uid = cmdline.uid
     if uid !="r":
@@ -126,6 +131,7 @@ def main():
     
     #write all other blocks
     ticks = 0
+    updatetime = time() 
     while True:
         buffer = fin.read(sbx.datasize)
         if len(buffer) < sbx.datasize:
@@ -134,11 +140,12 @@ def main():
         sbx.blocknum += 1
         sbx.data = buffer
         fout.write(sbx.encode())
+
         #some progress update
-        ticks +=1
-        if ticks == 29:
-            print("%.1f%%" % (fin.tell()*100.0/filesize), " ",end = "\r")
-            ticks = 0
+        if time() > updatetime:
+            print("%.1f%%" % (fin.tell()*100.0/filesize), " ",
+                  end="\r", flush=True)
+            updatetime = time() + .1
         
     print("100%  ")
     fin.close()
@@ -147,7 +154,7 @@ def main():
     totblocks = sbx.blocknum if cmdline.nometa else sbx.blocknum + 1
     sbxfilesize = totblocks * sbx.blocksize
     overhead = 100.0 * sbxfilesize / filesize - 100 if filesize > 0 else 0
-    print("sbx file size: %i - blocks: %i - overhead: %.1f%%" %
+    print("SBx file size: %i - blocks: %i - overhead: %.1f%%" %
           (sbxfilesize, totblocks, overhead))
 
 

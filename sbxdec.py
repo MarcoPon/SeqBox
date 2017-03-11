@@ -29,10 +29,11 @@ import hashlib
 import argparse
 import binascii
 from functools import partial
+from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.65b"
+PROGRAM_VER = "0.7.0b"
 
 
 def banner():
@@ -105,12 +106,11 @@ def main():
     metadatafound = False
     trimfilesize = False
 
-    print("check first block")    
     buffer = fin.read(sbx.blocksize)
     if not sbx.decode(buffer):
-        errexit(errlev=1, mess="invalid block")
+        errexit(errlev=1, mess="invalid block at offset 0x0")
     if sbx.blocknum > 1:
-        errexit(errlev=1, mess="blocks missing or out of order")
+        errexit(errlev=1, mess="blocks missing or out of order at offset 0x0")
     elif sbx.blocknum == 0:
         print("metadata block found!")
         metadatafound = True
@@ -159,6 +159,7 @@ def main():
     lastblocknum = 0
     d = hashlib.sha256()
     filesize = 0
+    updatetime = time() 
     while True:
         buffer = fin.read(sbx.blocksize)
         if len(buffer) < sbx.blocksize:
@@ -178,7 +179,13 @@ def main():
             d.update(sbx.data)
             if not cmdline.test:
                 fout.write(sbx.data)
-    
+
+            #some progress report
+            if time() > updatetime: 
+                print("  %.1f%%" % (fin.tell()*100.0/sbxfilesize),
+                      end="\r", flush=True)
+                updatetime = time() + .1
+
     fin.close()
     if not cmdline.test:
         fout.close()

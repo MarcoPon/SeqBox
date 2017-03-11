@@ -35,7 +35,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.61a"
+PROGRAM_VER = "0.8.0b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -57,13 +57,12 @@ def get_cmdline():
                         help="file(s) to scan")
     parser.add_argument("-d", "--database", action="store", dest="dbfilename",
                         metavar="filename",
-                        help="database with recovery info",
+                        help="where to save recovery info",
                         default="sbxscan.db3")
-    parser.add_argument("-r", "--report", action="store", dest="repfilename",
-                        help=("report with scan results"),
-                        metavar="filename", default="sbxscan.csv")
     parser.add_argument("-o", "--offset", type=int, default=0,
                         help=("offset from the start"), metavar="n")
+    parser.add_argument("-b", "--buffer", type=int, default=1024,
+                        help=("read buffer in KB"), metavar="n")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
                         help="SBx blocks version to search for", metavar="n")
     res = parser.parse_args()
@@ -131,11 +130,11 @@ def main():
           (filenum, filename))
         conn.commit()
 
-        fin = open(filename, "rb", buffering=1024*1024)
+        fin = open(filename, "rb", buffering=cmdline.buffer*1024)
         fin.seek(offset, 0)
         blocksfound = 0
         blocksmetafound = 0
-        updatetime = time()
+        updatetime = time() - 1
         starttime = time()
         docommit = False
         for b in range(blocksnum):
