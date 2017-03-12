@@ -10,5 +10,3 @@
              from a filelist (can probably be done directly by argparse)
 - 09/03/2017 remember to check what happens with spaces in filename 
              used to/from db
-- 11/03/2017 sbxreco: provide some kind of list/report of recovered
-             files with errs

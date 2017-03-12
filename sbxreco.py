@@ -34,7 +34,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.0b"
+PROGRAM_VER = "0.8.1b"
 
 BLOCKSIZE = 512
 
@@ -130,8 +130,11 @@ def uniquifyFileName(filename):
 
 
 def report(c):
-    """Create a detailed report with the info obtained by SbxScan"""
-    #test
+    """Create a report with the info obtained by SbxScan"""
+    #just the basic info in CSV format for the moment
+
+    print('\n"UID", "blocks", "filesize", "sbxname", "filename"')
+
     c.execute("SELECT uid from sbx_blocks group by uid order by uid")
     for row in c.fetchall():
         uid = row[0]
@@ -143,12 +146,34 @@ def report(c):
 
         if "filesize" in metadata:
             filesize = metadata["filesize"]
-            est = ""
         else:
             filesize = blocksnum * BLOCKSIZE
-            est = chr(126)
         
-        print("%s %i %i%s '%s'" % (hexdigits, blocksnum, filesize, est, sbxname))
+        print('"%s", %i, %i, "%s", "%s"' %
+              (hexdigits, blocksnum, filesize, sbxname, filename))
+
+def report_err(c, uiderrlist):
+    """Create a report with recovery errors"""
+    #just the basic info in CSV format for the moment
+
+    print('\n"UID", "blocks", "errs", "filesize", "sbxname", "filename"')
+    for info in uiderrlist:
+        uid = info[0]
+        errblocks = info[1]
+        hexdigits = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
+        metadata = dbGetMetaFromUID(c, uid)
+        blocksnum = dbGetBlocksCountFromUID(c, uid)
+        filename = metadata["filename"] if "filename" in metadata else ""
+        sbxname = metadata["sbxname"] if "sbxname" in metadata else ""
+
+        if "filesize" in metadata:
+            filesize = metadata["filesize"]
+        else:
+            filesize = blocksnum * BLOCKSIZE
+        
+        print('"%s", %i, %i, %i, "%s", "%s"' %
+              (hexdigits, blocksnum, errblocks, filesize, sbxname, filename))
+
 
 def main():
 
@@ -160,7 +185,7 @@ def main():
         errexit(1,"file '%s' not found!" % (dbfilename))
 
     #open database
-    print("opening '%s' database..." % (dbfilename))
+    print("opening '%s' recovery info database..." % (dbfilename))
     conn = sqlite3.connect(dbfilename)
     c = conn.cursor()
 
@@ -210,6 +235,9 @@ def main():
         finlist[key] = open(value, "rb")
 
     uidcount = 0
+    totblocks = 0
+    totblockserr = 0
+    uiderrlist = []
     for uid in uid_list:
         uidcount += 1
         hexuid = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
@@ -248,6 +276,7 @@ def main():
         missingblocks = 0
         updatetime = time() -1
         maxbnum =  blockdatalist[-1][0]
+        #loop trough the block list and recreate SBx file
         for blockdata in blockdatalist:
             bnum = blockdata[0]
             #check for missing blocks and fill in
@@ -267,7 +296,7 @@ def main():
             lastblock = bnum
 
             #some progress report
-            if time() > updatetime or bnum > len(blockdatalist):
+            if time() > updatetime or bnum >= len(blockdatalist):
                 print("  %.1f%%" % (bnum*100.0/maxbnum), " ",
                       "(missing blocks: %i)" % missingblocks,
                       end="\r", flush=True)
@@ -275,8 +304,17 @@ def main():
 
         fout.close()
         print()
+        if missingblocks > 0:
+            uiderrlist.append((uid, missingblocks))
+            totblockserr += missingblocks
 
+    print("\ndone.")
+    if len(uiderrlist) == 0:
+        print("all SBx files recovered with no errors!")
+    else:
+        print("errors detected in %i SBx file(s)!" % len(uiderrlist))
+        report_err(c, uiderrlist)
 
-
+            
 if __name__ == '__main__':
     main()
