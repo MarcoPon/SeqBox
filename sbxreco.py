@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# SBxReco - Sequenced Box container Recover
+# SBXReco - Sequenced Box container Recover
 #s
 # Created: 08/03/2017
 #
@@ -34,7 +34,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.3b"
+PROGRAM_VER = "0.8.4b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -47,9 +47,10 @@ def get_cmdline():
     parser = argparse.ArgumentParser(
              description="recover SeqBox containers",
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-             prefix_chars='-+')
+             prefix_chars='-+',
+             fromfile_prefix_chars='@')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBxRecover v%s' % PROGRAM_VER)
+                        version='SBXRecover v%s' % PROGRAM_VER)
     parser.add_argument("dbfilename", action="store", metavar="filename",
                         help="database with recovery info")
     parser.add_argument("destpath", action="store", nargs="?", metavar="path",
@@ -57,7 +58,7 @@ def get_cmdline():
     parser.add_argument("-file", action="store", nargs="+", metavar="filename",
                         help="original filename(s) to recover")
     parser.add_argument("-sbx", action="store", nargs="+", metavar="filename",
-                        help="SBx filename(s) to recover")
+                        help="SBX filename(s) to recover")
     parser.add_argument("-uid", action="store", nargs="+", metavar="uid",
                         help="UID(s) to recover")
     parser.add_argument("-all", action="store_true", help="recover all")
@@ -230,7 +231,7 @@ def main():
     if len(uidRecoList) == 0:
         errexit(1, "nothing to recover!")
 
-    print("recovering SBx files...")
+    print("recovering SBX files...")
     uid_list = sorted(set(uidRecoList))
 
     #open all the sources

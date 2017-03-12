@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# SBxEnc - Sequenced Box container Encoder
+# SBXEnc - Sequenced Box container Encoder
 #
 # Created: 10/02/2017
 #
@@ -48,11 +48,11 @@ def get_cmdline():
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-+')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBxEncoder v%s' % PROGRAM_VER)
+                        version='SBXEncoder v%s' % PROGRAM_VER)
     parser.add_argument("filename", action="store", 
                         help="file to encode")
     parser.add_argument("sbxfilename", action="store", nargs='?',
-                        help="SBx container")
+                        help="SBX container")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing file")
     parser.add_argument("-nm","--nometa", action="store_true", default=False,
@@ -60,7 +60,7 @@ def get_cmdline():
     parser.add_argument("-uid", action="store", default="r", type=str,
                         help="use random or custom UID (up to 12 hexdigits)")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
-                        help="SBx blocks version", metavar="n")
+                        help="SBX blocks version", metavar="n")
     res = parser.parse_args()
     return res
 
@@ -94,7 +94,7 @@ def main():
         sbxfilename = os.path.join(sbxfilename,
                                    os.path.split(filename)[1] + ".sbx")
     if os.path.exists(sbxfilename) and not cmdline.overwrite:
-        errexit(1, "SBx file '%s' already exists!" % (sbxfilename))
+        errexit(1, "SBX file '%s' already exists!" % (sbxfilename))
         
     #parse eventual custom uid
     uid = cmdline.uid
@@ -156,7 +156,7 @@ def main():
     totblocks = sbx.blocknum if cmdline.nometa else sbx.blocknum + 1
     sbxfilesize = totblocks * sbx.blocksize
     overhead = 100.0 * sbxfilesize / filesize - 100 if filesize > 0 else 0
-    print("SBx file size: %i - blocks: %i - overhead: %.1f%%" %
+    print("SBX file size: %i - blocks: %i - overhead: %.1f%%" %
           (sbxfilesize, totblocks, overhead))
 
 

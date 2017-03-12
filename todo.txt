@@ -7,8 +7,4 @@
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
 
-- 08/03/2017 in sbxreco the files/uids to recover should also be read
-             from a filelist (can probably be done directly by argparse)
-
-- 12/03/2017 check if struct.pack&unpack is faster tha to/from_bytes
-
+- 12/03/2017 check if struct.pack&unpack is faster than to/from_bytes

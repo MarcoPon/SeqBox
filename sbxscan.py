@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# SBxEnc - Sequenced Box container Scanner
+# SBXScan - Sequenced Box container Scanner
 #
 # Created: 06/03/2017
 #
@@ -35,7 +35,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.2b"
+PROGRAM_VER = "0.8.3b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -48,11 +48,11 @@ def get_cmdline():
     parser = argparse.ArgumentParser(
              description=("scan files/devices for SBx blocks and create a "+
                           "detailed report plus an index to be used with "+
-                          "SBxResq"),
+                          "SBXScan"),
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-             prefix_chars='-')
+             prefix_chars='-', fromfile_prefix_chars='@')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBxScanner v%s' % PROGRAM_VER)
+                        version='SBXScanner v%s' % PROGRAM_VER)
     parser.add_argument("filename", action="store", nargs="+",
                         help="file(s) to scan")
     parser.add_argument("-d", "--database", action="store", dest="dbfilename",
@@ -64,7 +64,7 @@ def get_cmdline():
     parser.add_argument("-b", "--buffer", type=int, default=1024,
                         help=("read buffer in KB"), metavar="n")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
-                        help="SBx blocks version to search for", metavar="n")
+                        help="SBX blocks version to search for", metavar="n")
     res = parser.parse_args()
     return res
 

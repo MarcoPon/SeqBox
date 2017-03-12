@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #--------------------------------------------------------------------------
-# SBxDec - Sequenced Box container Decoder
+# SBXDec - Sequenced Box container Decoder
 #
 # Created: 03/03/2017
 #
@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.7.0b"
+PROGRAM_VER = "0.8.0b"
 
 
 def banner():
@@ -49,7 +49,7 @@ def get_cmdline():
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-+')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBxDecoder v%s' % PROGRAM_VER)
+                        version='SBXDecoder v%s' % PROGRAM_VER)
     parser.add_argument("sbxfilename", action="store", help="SBx container")
     parser.add_argument("filename", action="store", nargs='?', 
                         help="target/decoded file")
@@ -137,7 +137,7 @@ def main():
         print("  UID: %s" % (binascii.hexlify(sbx.uid).decode()))
         if metadatafound:
             print("metadata:")
-            print("  SBx name : '%s'" % (metadata["sbxname"]))
+            print("  SBX name : '%s'" % (metadata["sbxname"]))
             print("  file name: '%s'" % (metadata["filename"]))
             print("  file size: %i bytes" % (metadata["filesize"]))
             print("  SHA256: %s" % (binascii.hexlify(metadata["hash"]
@@ -197,7 +197,7 @@ def main():
     if not cmdline.test:
         fout.close()
 
-    print("SBx decodeding complete")
+    print("SBX decodeding complete")
     if "hash" in metadata:
         print("SHA256",d.hexdigest())
         if d.digest() ==  metadata["hash"]:
