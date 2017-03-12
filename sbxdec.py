@@ -101,7 +101,14 @@ def main():
 
     print("decoding '%s'..." % (sbxfilename))
     fin = open(sbxfilename, "rb", buffering=1024*1024)
-    sbx = seqbox.sbxBlock()
+
+    #check magic and get version
+    if fin.read(3) != b"SBx":
+        errexit(1, "not a SeqBox file!")
+    sbxver = ord(fin.read(1))
+    fin.seek(0, 0)
+    
+    sbx = seqbox.sbxBlock(ver=sbxver)
     metadata = {}
     metadatafound = False
     trimfilesize = False

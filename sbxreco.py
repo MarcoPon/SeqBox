@@ -36,8 +36,6 @@ import seqbox
 
 PROGRAM_VER = "0.8.1b"
 
-BLOCKSIZE = 512
-
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
     print("\nSeqBox - Sequenced Box container - Recover v%s" % (PROGRAM_VER),
@@ -67,6 +65,8 @@ def get_cmdline():
                         help="show info on recoverable sbx file(s)")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing sbx file(s)")
+    parser.add_argument("-sv", "--sbxver", type=int, default=1,
+                        help="SBx blocks version", metavar="n")
     res = parser.parse_args()
     return res
 
@@ -147,7 +147,7 @@ def report(c):
         if "filesize" in metadata:
             filesize = metadata["filesize"]
         else:
-            filesize = blocksnum * BLOCKSIZE
+            filesize = blocksnum * sbx.blocksize
         
         print('"%s", %i, %i, "%s", "%s"' %
               (hexdigits, blocksnum, filesize, sbxname, filename))
@@ -169,7 +169,7 @@ def report_err(c, uiderrlist):
         if "filesize" in metadata:
             filesize = metadata["filesize"]
         else:
-            filesize = blocksnum * BLOCKSIZE
+            filesize = blocksnum * sbx.blocksize
         
         print('"%s", %i, %i, %i, "%s", "%s"' %
               (hexdigits, blocksnum, errblocks, filesize, sbxname, filename))
@@ -179,6 +179,7 @@ def main():
 
     banner()
     cmdline = get_cmdline()
+    sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
 
     dbfilename = cmdline.dbfilename
     if not os.path.exists(dbfilename) or os.path.isdir(dbfilename):
@@ -245,7 +246,7 @@ def main():
 
         blocksnum = dbGetBlocksCountFromUID(c, uid)
         print("  blocks: %i - size: %i bytes" %
-              (blocksnum, blocksnum * BLOCKSIZE))
+              (blocksnum, blocksnum * sbx.blocksize))
         meta = dbGetMetaFromUID(c, uid)
         if "sbxname" in meta:
             sbxname = meta["sbxname"]
@@ -265,11 +266,10 @@ def main():
         #read 1 block to initialize the correct block parameters
         #(needed for filling in missing blocks)
         blockdata = blockdatalist[0]
-        sbx = seqbox.sbxBlock()
         fin = finlist[blockdata[1]]
         bpos = blockdata[2]
         fin.seek(bpos, 0)
-        sbx.decode(fin.read(BLOCKSIZE))
+        sbx.decode(fin.read(sbx.blocksize))
         
         lastblock = -1
         ticks = 0
@@ -291,7 +291,7 @@ def main():
             fin = finlist[blockdata[1]]
             bpos = blockdata[2]
             fin.seek(bpos, 0)
-            buffer = fin.read(BLOCKSIZE)
+            buffer = fin.read(sbx.blocksize)
             fout.write(buffer)
             lastblock = bnum
 

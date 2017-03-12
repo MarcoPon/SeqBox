@@ -117,7 +117,7 @@ def main():
     offset = cmdline.offset
     filenum = 0
     uids = {}
-    magic = b'SBx' + cmdline.sbxver.to_bytes(1, byteorder='big', signed=True)
+    magic = b'SBx' + bytes([cmdline.sbxver])
 
     for filename in filenames:
         filenum += 1
@@ -173,7 +173,7 @@ def main():
                     etime = 1
                 print("%5.1f%% blocks: %i - meta: %i - files: %i - %.2fMB/s" %
                       ((b+1)*100.0/blocksnum, blocksfound, blocksmetafound,
-                       len(uids), b*512/(1024*1024)/etime),
+                       len(uids), b*sbx.blocksize/(1024*1024)/etime),
                       end = "\r", flush=True)
                 if docommit:
                     conn.commit()

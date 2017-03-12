@@ -35,14 +35,20 @@ class sbxBlock():
     Implement a basic SBX block
     """
     def __init__(self, ver=1, uid="r"):
+        self.supported_vers = [0, 1, 2]
         self.ver = ver
         if ver in [0,1]:
             self.blocksize = 512
             self.hdrsize = 16
+        elif ver == 2:
+            #just a test to double check all tools works correctly
+            #with different parameters. or it could be good for CP/M! :)
+            self.blocksize = 128
+            self.hdrsize = 16
         else:
             raise version_not_supported #put in a proper exception
         self.datasize = self.blocksize - self.hdrsize
-        self.magic = b'SBx' + ver.to_bytes(1, byteorder='big', signed=True)
+        self.magic = b'SBx' + bytes([ver])
         self.blocknum = 0
 
         if uid == "r":
@@ -88,7 +94,7 @@ class sbxBlock():
             return False
         if buffer[:3] != self.magic[:3]:
             return False
-        if not buffer[3] in [0,1]:
+        if not buffer[3] in self.supported_vers:
             return False
 
         #check CRC of rest of the block

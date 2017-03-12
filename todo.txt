@@ -1,12 +1,13 @@
 - 26/02/2017 consider using multihash: http://multiformats.io/multihash/
              or maybe just multihash.io convention
 
-- 27/02/2017 blake2 woule probably be better, but require Python >=3.6
+- 27/02/2017 blake2 woule probably be better, but require Python >=3.6.
+             SHA226 should be good enough.
 
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
 
 - 08/03/2017 in sbxreco the files/uids to recover should also be read
              from a filelist (can probably be done directly by argparse)
-- 09/03/2017 remember to check what happens with spaces in filename 
-             used to/from db
+
+- 12/03/2017 check if struct.pack&unpack is faster tha to/from_bytes

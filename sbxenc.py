@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.7.1b"
+PROGRAM_VER = "0.8.9b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -59,6 +59,8 @@ def get_cmdline():
                         help="exclude matadata block")
     parser.add_argument("-uid", action="store", default="r", type=str,
                         help="use random or custom UID (up to 12 hexdigits)")
+    parser.add_argument("-sv", "--sbxver", type=int, default=1,
+                        help="SBx blocks version", metavar="n")
     res = parser.parse_args()
     return res
 
@@ -119,7 +121,7 @@ def main():
     fin = open(filename, "rb", buffering=1024*1024)
     print("creating file '%s'..." % sbxfilename)
 
-    sbx = seqbox.sbxBlock(uid=uid)
+    sbx = seqbox.sbxBlock(uid=uid, ver=cmdline.sbxver)
     
     #write metadata block 0
     if not cmdline.nometa:
