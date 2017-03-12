@@ -11,3 +11,4 @@
              from a filelist (can probably be done directly by argparse)
 
 - 12/03/2017 check if struct.pack&unpack is faster tha to/from_bytes
+

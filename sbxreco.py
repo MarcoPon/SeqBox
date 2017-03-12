@@ -34,7 +34,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.1b"
+PROGRAM_VER = "0.8.3b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -65,8 +65,6 @@ def get_cmdline():
                         help="show info on recoverable sbx file(s)")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing sbx file(s)")
-    parser.add_argument("-sv", "--sbxver", type=int, default=1,
-                        help="SBx blocks version", metavar="n")
     res = parser.parse_args()
     return res
 
@@ -108,9 +106,9 @@ def dbGetBlocksListFromUID(c, uid):
     c.execute("SELECT num, fileid, pos from sbx_blocks where uid = '%i' group by num order by num" % (uid))
     return c.fetchall()
 
-def dbGetUIDsList(c):
-    c.execute("SELECT uid from sbx_blocks GROUP BY uid")
-    res = [row[0] for row in c.fetchall()]
+def dbGetUIDDataList(c):
+    c.execute("SELECT * from sbx_uids")
+    res = {row[0]:row[1] for row in c.fetchall()}
     return res
 
 def dbGetSourcesList(c):
@@ -129,30 +127,27 @@ def uniquifyFileName(filename):
     return filename
 
 
-def report(c):
+def report(c, uidDataList, blocksizes):
     """Create a report with the info obtained by SbxScan"""
     #just the basic info in CSV format for the moment
 
-    print('\n"UID", "blocks", "filesize", "sbxname", "filename"')
+    print('\n"UID", "filesize", "sbxname", "filename"')
 
-    c.execute("SELECT uid from sbx_blocks group by uid order by uid")
-    for row in c.fetchall():
-        uid = row[0]
+    for uid in uidDataList:
         hexdigits = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
         metadata = dbGetMetaFromUID(c, uid)
         blocksnum = dbGetBlocksCountFromUID(c, uid)
         filename = metadata["filename"] if "filename" in metadata else ""
         sbxname = metadata["sbxname"] if "sbxname" in metadata else ""
-
         if "filesize" in metadata:
             filesize = metadata["filesize"]
         else:
-            filesize = blocksnum * sbx.blocksize
+            filesize = blocksnum * blocksizes[uidDataList[uid]]
         
-        print('"%s", %i, %i, "%s", "%s"' %
-              (hexdigits, blocksnum, filesize, sbxname, filename))
+        print('"%s", %i, "%s", "%s"' %
+              (hexdigits, filesize, sbxname, filename))
 
-def report_err(c, uiderrlist):
+def report_err(c, uiderrlist, uidDataList, blocksizes):
     """Create a report with recovery errors"""
     #just the basic info in CSV format for the moment
 
@@ -169,7 +164,7 @@ def report_err(c, uiderrlist):
         if "filesize" in metadata:
             filesize = metadata["filesize"]
         else:
-            filesize = blocksnum * sbx.blocksize
+            filesize = blocksnum * blocksizes[uidDataList[uid]]
         
         print('"%s", %i, %i, %i, "%s", "%s"' %
               (hexdigits, blocksnum, errblocks, filesize, sbxname, filename))
@@ -179,7 +174,6 @@ def main():
 
     banner()
     cmdline = get_cmdline()
-    sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
 
     dbfilename = cmdline.dbfilename
     if not os.path.exists(dbfilename) or os.path.isdir(dbfilename):
@@ -190,14 +184,23 @@ def main():
     conn = sqlite3.connect(dbfilename)
     c = conn.cursor()
 
+    #get data on all uids present
+    uidDataList = dbGetUIDDataList(c)
+
+    #get blocksizes for every supported SBx version
+    blocksizes = {}
+    for v in seqbox.supported_vers:
+        blocksizes[v] = seqbox.sbxBlock(ver=v).blocksize
+    
+    #info/report
     if cmdline.info:
-        report(c)
+        report(c, uidDataList, blocksizes)
         errexit(0)
 
     #build a list of uid to recover:
-    uid_list = []
+    uidRecoList = []
     if cmdline.all:
-        uid_list = dbGetUIDsList(c)
+        uidRecoList = list(uidDataList)
     else:
         if cmdline.uid:
             for hexuid in cmdline.uid:
@@ -206,29 +209,29 @@ def main():
                 uid = int.from_bytes(binascii.unhexlify(hexuid),
                                      byteorder="big")
                 if dbGetBlocksCountFromUID(c, uid):
-                    uid_list.append(uid)
+                    uidRecoList.append(uid)
                 else:
                     errexit(1,"no recoverable UID '%s'" % (hexuid))
         if cmdline.sbx:
             for sbxname in cmdline.sbx:
                 uid = dbGetUIDFromSbxName(c, sbxname)
                 if uid:
-                    uid_list.append(uid)
+                    uidRecoList.append(uid)
                 else:
                     errexit(1,"no recoverable sbx file '%s'" % (sbxname))
         if cmdline.file:
             for filename in cmdline.file:
                 uid = dbGetUIDFromFileName(c, filename)
                 if uid:
-                    uid_list.append(uid)
+                    uidRecoList.append(uid)
                 else:
                     errexit(1,"no recoverable file '%s'" % (filename))
 
-    if len(uid_list) == 0:
+    if len(uidRecoList) == 0:
         errexit(1, "nothing to recover!")
 
     print("recovering SBx files...")
-    uid_list = sorted(set(uid_list))
+    uid_list = sorted(set(uidRecoList))
 
     #open all the sources
     finlist = {}
@@ -239,8 +242,10 @@ def main():
     totblocks = 0
     totblockserr = 0
     uiderrlist = []
-    for uid in uid_list:
+    for uid in uidRecoList:
         uidcount += 1
+        sbxver = uidDataList[uid]
+        sbx = seqbox.sbxBlock(ver=sbxver)
         hexuid = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
         print("UID %s (%i/%i)" % (hexuid, uidcount, len(uid_list)))
 
@@ -313,7 +318,7 @@ def main():
         print("all SBx files recovered with no errors!")
     else:
         print("errors detected in %i SBx file(s)!" % len(uiderrlist))
-        report_err(c, uiderrlist)
+        report_err(c, uiderrlist, uidDataList, blocksizes)
 
             
 if __name__ == '__main__':

@@ -35,7 +35,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.0b"
+PROGRAM_VER = "0.8.2b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -110,6 +110,7 @@ def main():
     c = conn.cursor()
     c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
     c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
+    c.execute("CREATE TABLE sbx_uids (uid INTEGER, ver INTEGER)")
     c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fileid INTEGER, pos INTEGER )")
 
     #scan all the files/devices 
@@ -144,8 +145,14 @@ def main():
             if buffer[:4] == magic:
                 #check for valid block
                 if sbx.decode(buffer):
-                    #used to keep a quick in memory list of the uids/files found
-                    uids[sbx.uid] = True
+                    #update uids table & list
+                    if not sbx.uid in uids:
+                        uids[sbx.uid] = True
+                        c.execute(
+                            "INSERT INTO sbx_uids (uid, ver) VALUES (?, ?)",
+                            (int.from_bytes(sbx.uid, byteorder='big'),
+                             sbx.ver))
+                        docommit = True
 
                     #update blocks table
                     blocksfound+=1

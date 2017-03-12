@@ -25,24 +25,25 @@
 
 import os
 import sys
-import hashlib
 import binascii
 import random
 
-
+supported_vers = [1, 2]
+    
 class sbxBlock():
     """
     Implement a basic SBX block
     """
+
     def __init__(self, ver=1, uid="r"):
-        self.supported_vers = [0, 1, 2]
         self.ver = ver
-        if ver in [0,1]:
+        if ver == 1:
             self.blocksize = 512
             self.hdrsize = 16
         elif ver == 2:
-            #just a test to double check all tools works correctly
-            #with different parameters. or it could be good for CP/M! :)
+            #mostly a test to double check that all tools works correctly
+            #with different blocks versions/parameters.
+            #or it could be good for CP/M! :)
             self.blocksize = 128
             self.hdrsize = 16
         else:
@@ -94,7 +95,7 @@ class sbxBlock():
             return False
         if buffer[:3] != self.magic[:3]:
             return False
-        if not buffer[3] in self.supported_vers:
+        if not buffer[3] in supported_vers:
             return False
 
         #check CRC of rest of the block
