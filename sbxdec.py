@@ -28,7 +28,6 @@ import sys
 import hashlib
 import argparse
 import binascii
-from functools import partial
 from time import time
 
 import seqbox
@@ -70,14 +69,6 @@ def errexit(errlev=1, mess=""):
     sys.exit(errlev)
 
 
-def getsha256(filename):
-    with open(filename, mode='rb') as fin:
-        d = hashlib.sha256()
-        for buf in iter(partial(fin.read, 1024*1024), b''):
-            d.update(buf)
-    return d.digest()
-
-
 def lastEofCount(data):
     count = 0
     for b in range(len(data)):
@@ -113,6 +104,11 @@ def main():
     metadatafound = False
     trimfilesize = False
 
+    hashtype = 0
+    hashlen = 0
+    hashdigest = b""
+    hashcheck = False
+
     buffer = fin.read(sbx.blocksize)
     if not sbx.decode(buffer):
         errexit(errlev=1, mess="invalid block at offset 0x0")
@@ -122,7 +118,14 @@ def main():
         print("metadata block found!")
         metadatafound = True
         metadata = sbx.metadata
-        trimfilesize = True
+        if "filesize" in metadata:
+            trimfilesize = True
+        hashtype = metadata["hash"][0]
+        if hashtype == 0x12:
+            hashlen = metadata["hash"][1]
+            hashdigest = metadata["hash"][2:2+hashlen]
+            hashcheck = True
+        
     else:
         #first block is data, so reset from the start
         print("no metadata available")
@@ -140,8 +143,11 @@ def main():
             print("  SBX name : '%s'" % (metadata["sbxname"]))
             print("  file name: '%s'" % (metadata["filename"]))
             print("  file size: %i bytes" % (metadata["filesize"]))
-            print("  SHA256: %s" % (binascii.hexlify(metadata["hash"]
-                                                   ).decode()))
+            if hashtype == 0x12:
+                print("  SHA256: %s" % (binascii.hexlify(
+                    hashdigest).decode()))
+            else:
+                print("  hash type not recognized!")
         sys.exit(0)
 
     #evaluate target filename
@@ -163,8 +169,10 @@ def main():
         print("creating file '%s'..." % (filename))
         fout= open(filename, "wb", buffering=1024*1024)
 
+    if hashtype == 0x12:
+        d = hashlib.sha256()
     lastblocknum = 0
-    d = hashlib.sha256()
+
     filesize = 0
     updatetime = time() 
     while True:
@@ -183,7 +191,8 @@ def main():
                 filesize += sbx.datasize
                 if filesize > metadata["filesize"]:
                     sbx.data = sbx.data[:-(filesize - metadata["filesize"])]
-            d.update(sbx.data)
+            if hashcheck:
+                d.update(sbx.data) 
             if not cmdline.test:
                 fout.write(sbx.data)
 
@@ -198,16 +207,20 @@ def main():
         fout.close()
 
     print("SBX decodeding complete")
-    if "hash" in metadata:
-        print("SHA256",d.hexdigest())
-        if d.digest() ==  metadata["hash"]:
+    if hashcheck:
+        if hashtype == 0x12:
+            print("SHA256", d.hexdigest())
+
+        if d.digest() == hashdigest:
             print("hash match!")
         else:
             errexit(1, "hash mismatch! decoded file corrupted!")
     else:
+        print("can't check integrity via hash!")
         #if filesize unknown, estimate based on 0x1a padding at block's end
-        c = lastEofCount(sbx.data[-4:])
-        print("EOF markers at the end of last block: %i/4" % c)
+        if not trimfilesize:
+            c = lastEofCount(sbx.data[-4:])
+            print("EOF markers at the end of last block: %i/4" % c)
 
 
 if __name__ == '__main__':

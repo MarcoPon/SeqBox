@@ -25,10 +25,8 @@
 
 import os
 import sys
-import hashlib
 import argparse
 import binascii
-from functools import partial
 import sqlite3
 from time import time
 

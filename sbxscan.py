@@ -25,11 +25,8 @@
 
 import os
 import sys
-import hashlib
 import argparse
 import binascii
-import fnmatch
-from functools import partial
 from time import sleep, time
 import sqlite3
 

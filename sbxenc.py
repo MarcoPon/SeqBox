@@ -128,7 +128,7 @@ def main():
         sbx.metadata = {"filesize":filesize,
                         "filename":os.path.split(filename)[1],
                         "sbxname":os.path.split(sbxfilename)[1],
-                        "hash":sha256}
+                        "hash":b'\x12\x20'+sha256} #multihash
         fout.write(sbx.encode())
     
     #write all other blocks

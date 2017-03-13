@@ -81,7 +81,7 @@ The other two are the recovery tools:
 | FNM | filename (utf-8) |
 | SNM | sbx filename (utf-8) |
 | FSZ | filesize (8 bytes) |
-| HSH | SHA256 crypto hash |
+| HSH | crypto hash (using [Multihash](http://multiformats.io) protocol) |
 (others IDs for file dates, attributes, etc. will be added...)
 
 ## Final notes

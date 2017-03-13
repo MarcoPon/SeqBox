@@ -1,8 +1,5 @@
-- 26/02/2017 consider using multihash: http://multiformats.io/multihash/
-             or maybe just multihash.io convention
-
-- 27/02/2017 blake2 woule probably be better, but require Python >=3.6.
-             SHA226 should be good enough.
+- 27/02/2017 blake2 would be better than SHA256, but require Python >=3.6.
+             SHA256 should be good enough for the moment.
 
 - 04/04/2017 check if raising exceptions is the best things to do for 
              errors while encoding/decoding blocks
