@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.0b"
+PROGRAM_VER = "0.8.1b"
 
 
 def banner():
@@ -206,7 +206,7 @@ def main():
     if not cmdline.test:
         fout.close()
 
-    print("SBX decodeding complete")
+    print("SBX decoding complete")
     if hashcheck:
         if hashtype == 0x12:
             print("SHA256", d.hexdigest())

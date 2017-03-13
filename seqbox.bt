@@ -3,8 +3,9 @@
 //
 // File: seqbox.bt
 // Author: Marco Pontello
-// Revision:
+// Revision: 1
 // Purpose: Explore SeqBox container
+// https://github.com/MarcoPon/SeqBox
 //--------------------------------------
 
 local int BLOCKSIZE = 512;
