@@ -5,3 +5,5 @@
              errors while encoding/decoding blocks
 
 - 12/03/2017 check if struct.pack&unpack is faster than to/from_bytes
+
+- 13/03/2017 add a --nofill option on sbxreco
