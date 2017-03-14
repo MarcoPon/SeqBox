@@ -87,6 +87,6 @@ The other two are the recovery tools:
 
 ## Final notes
 The code was quickly hacked together in spare slices of time to verify the basic idea, so it will benefit for some refactoring, in time.
-Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculate before any other file operation.
+Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculated before any other file operation.
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
