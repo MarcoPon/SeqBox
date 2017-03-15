@@ -1,8 +1,7 @@
 # SeqBox - Sequenced Box container
-
-> A single file container/archive that can be reconstructed even after total loss of file system structures.
-
-A SeqBox container have a blocksize sub/equal to that of a sector, so can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
+### A single file container/archive that can be reconstructed even after total loss of file system structures.
+![SBX-Logo](http://i.imgur.com/Ewper2w.png)
+A SeqBox container is a collections of blocks with size sub/equal to that of a sector, so it can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
 Additional, non critical info/metadata are contained in block 0 (like name, file size, crypto-hash, other attributes, etc.).
 
 If disaster strikes, recovery can be performed simply scanning a volume/image, reading sector sized slices and checking blocks signatures and then CRCs to detect valid SBX blocks. Then the blocks can be grouped by UIDs, sorted by sequence number and reassembled to form the original SeqBox containers.
@@ -83,14 +82,14 @@ And sure enough:
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
 
 ## Tech spec
-
+Byte order: Big Endian
 ### Common blocks header:
 
 | pos | to pos | size | desc              |
 |---- | ---    | ---- | ----------------- |
 |  0  |      2 |   3  | Recoverable Block signature = 'SBx' |
 |  3  |      3 |   1  | Version byte (1) |
-|  4  |      5 |   2  | Block CRC-16 CCITT (Version is used as starting value) |
+|  4  |      5 |   2  | CRC-16-CCITT of the rest of the block (Version is used as starting value) |
 |  6  |     11 |   6  | file UID |
 | 12  |     15 |   4  | Block sequence number |
 
@@ -100,7 +99,6 @@ And sure enough:
 |---- | -------- | ---- | ---------------- |
 | 16  | n        | var  | encoded metadata |
 |  n+1| blockend | var  | padding (0x1a)   |
-
 
 ### Blocks > 0 & < last:
 
