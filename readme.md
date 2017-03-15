@@ -54,7 +54,7 @@ As expected, something has been recovered. But the 2 files size are off (280K an
 
 Other popular recovery tools lead to the same results. It's not anyone fault: it's just not possible to know how the various fragment are concatenated, without an index or some kind of list.
 
-But with a SBX file is a different story. Each one of its block can't be fragmented more, and contains all the needed data to be put in its proper place in sequence. So lets proceed with the recovery of the SBX files.
+But with a SBX file is a different story. Each one of its block can't be fragmented more, and contains all the needed data to be put in its proper place in sequence. So let's proceed with the recovery of the SBX files.
 To spice things up, the disk image file is run trough a scrambler, that swaps variable sized blocks of sectors around. The resulting layout is now this:
 
 ![Scrambled](http://i.imgur.com/jmOWult.png)
