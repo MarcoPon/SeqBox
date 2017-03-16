@@ -32,7 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.3b"
+PROGRAM_VER = "0.8.5b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -58,6 +58,8 @@ def get_cmdline():
                         default="sbxscan.db3")
     parser.add_argument("-o", "--offset", type=int, default=0,
                         help=("offset from the start"), metavar="n")
+    parser.add_argument("-st", "--step", type=int, default=0,
+                        help=("scan step"), metavar="n")
     parser.add_argument("-b", "--buffer", type=int, default=1024,
                         help=("read buffer in KB"), metavar="n")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
@@ -116,27 +118,28 @@ def main():
     filenum = 0
     uids = {}
     magic = b'SBx' + bytes([cmdline.sbxver])
+    scanstep = cmdline.step
+    if scanstep == 0:
+        scanstep = sbx.blocksize
 
     for filename in filenames:
         filenum += 1
         print("scanning file/device '%s' (%i/%i)..." %
               (filename, filenum, len(filenames)))
         filesize = getFileSize(filename)
-        blocksnum = (filesize - offset) // sbx.blocksize
 
         c.execute("INSERT INTO sbx_source (id, name) VALUES (?, ?)",
           (filenum, filename))
         conn.commit()
 
         fin = open(filename, "rb", buffering=cmdline.buffer*1024)
-        fin.seek(offset, 0)
         blocksfound = 0
         blocksmetafound = 0
         updatetime = time() - 1
         starttime = time()
         docommit = False
-        for b in range(blocksnum):
-            p = fin.tell()
+        for pos in range(offset, filesize, scanstep):
+            fin.seek(pos, 0)
             buffer = fin.read(sbx.blocksize)
             #check for magic
             if buffer[:4] == magic:
@@ -156,7 +159,7 @@ def main():
                     c.execute(
                         "INSERT INTO sbx_blocks (uid, num, fileid, pos) VALUES (?, ?, ?, ?)",
                         (int.from_bytes(sbx.uid, byteorder='big'),
-                         sbx.blocknum, filenum, p))
+                         sbx.blocknum, filenum, pos))
                     docommit = True
 
                     #update meta table
@@ -171,19 +174,19 @@ def main():
                         docommit = True
 
             #status update
-            if (time() > updatetime) or (b == blocksnum-1):
+            if (time() > updatetime) or (pos >= filesize - scanstep):
                 etime = (time()-starttime)
                 if etime == 0:
                     etime = 1
                 print("%5.1f%% blocks: %i - meta: %i - files: %i - %.2fMB/s" %
-                      ((b+1)*100.0/blocksnum, blocksfound, blocksmetafound,
-                       len(uids), b*sbx.blocksize/(1024*1024)/etime),
+                      (pos*100.0/(filesize-scanstep), blocksfound,
+                       blocksmetafound, len(uids), pos/(1024*1024)/etime),
                       end = "\r", flush=True)
                 if docommit:
                     conn.commit()
                     docommit = False
                 updatetime = time() + .5
-
+            
         fin.close()
         print()
 
