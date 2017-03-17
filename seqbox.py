@@ -103,9 +103,14 @@ class sbxBlock():
         if crc != binascii.crc_hqx(buffer[6:], self.ver):
             return False
 
+
+        self.parent_uid = 0
+
         self.uid = buffer[6:12]
         self.blocknum = int.from_bytes(buffer[12:16], byteorder='big') 
         self.data = buffer[16:]
+
+        self.metadata = {}
 
         if self.blocknum == 0:
             #decode meta data

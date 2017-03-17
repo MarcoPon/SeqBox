@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.1b"
+PROGRAM_VER = "0.8.2b"
 
 
 def banner():
@@ -101,7 +101,6 @@ def main():
     
     sbx = seqbox.sbxBlock(ver=sbxver)
     metadata = {}
-    metadatafound = False
     trimfilesize = False
 
     hashtype = 0
@@ -116,15 +115,15 @@ def main():
         errexit(errlev=1, mess="blocks missing or out of order at offset 0x0")
     elif sbx.blocknum == 0:
         print("metadata block found!")
-        metadatafound = True
         metadata = sbx.metadata
         if "filesize" in metadata:
             trimfilesize = True
-        hashtype = metadata["hash"][0]
-        if hashtype == 0x12:
-            hashlen = metadata["hash"][1]
-            hashdigest = metadata["hash"][2:2+hashlen]
-            hashcheck = True
+        if "hash" in metadata:
+            hashtype = metadata["hash"][0]
+            if hashtype == 0x12:
+                hashlen = metadata["hash"][1]
+                hashdigest = metadata["hash"][2:2+hashlen]
+                hashcheck = True
         
     else:
         #first block is data, so reset from the start
@@ -138,16 +137,20 @@ def main():
         print("  blocks: %i" % (sbxfilesize / sbx.blocksize))
         print("  version: %i" % (sbx.ver))
         print("  UID: %s" % (binascii.hexlify(sbx.uid).decode()))
-        if metadatafound:
+        if metadata:
             print("metadata:")
-            print("  SBX name : '%s'" % (metadata["sbxname"]))
-            print("  file name: '%s'" % (metadata["filename"]))
-            print("  file size: %i bytes" % (metadata["filesize"]))
-            if hashtype == 0x12:
-                print("  SHA256: %s" % (binascii.hexlify(
-                    hashdigest).decode()))
-            else:
-                print("  hash type not recognized!")
+            if "sbxname" in metadata:
+                print("  SBX name : '%s'" % (metadata["sbxname"]))
+            if "filename" in metadata:
+                print("  file name: '%s'" % (metadata["filename"]))
+            if "filesize" in metadata:
+                print("  file size: %i bytes" % (metadata["filesize"]))
+            if "hash" in metadata:
+                if hashtype == 0x12:
+                    print("  SHA256: %s" % (binascii.hexlify(
+                        hashdigest).decode()))
+                else:
+                    print("  hash type not recognized!")
         sys.exit(0)
 
     #evaluate target filename
