@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.4b"
+PROGRAM_VER = "0.8.5b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -75,44 +75,58 @@ def errexit(errlev=1, mess=""):
     sys.exit(errlev)
 
 
-def dbGetMetaFromUID(c, uid):
-    meta = {}
-    c.execute("SELECT * from sbx_meta where uid = '%i'" % uid)
-    res = c.fetchone()
-    if res:
-        meta["filesize"] = res[1]
-        meta["filename"] = res[2]
-        meta["sbxname"] = res[3]
-    return meta
+class RecDB():
+    """Helper class to access Sqlite3 DB with recovery info"""
 
-def dbGetUIDFromFileName(c, filename):
-    c.execute("select uid from sbx_meta where name = '%s'" % (filename))
-    res = c.fetchone()
-    if res:
-        return(res[0])
+    def __init__(self, dbfilename):
+        self.connection = sqlite3.connect(dbfilename)
+        self.cursor = self.connection.cursor()
 
-def dbGetUIDFromSbxName(c, sbxname):
-    c.execute("select uid from sbx_meta where sbxname = '%s'" % (sbxname))
-    res = c.fetchone()
-    if res:
-        return(res[0])
+    def GetMetaFromUID(self, uid):
+        meta = {}
+        c = self.cursor
+        c.execute("SELECT * from sbx_meta where uid = '%i'" % uid)
+        res = c.fetchone()
+        if res:
+            meta["filesize"] = res[1]
+            meta["filename"] = res[2]
+            meta["sbxname"] = res[3]
+        return meta
 
-def dbGetBlocksCountFromUID(c, uid):
-    c.execute("SELECT uid from sbx_blocks where uid = '%i' group by num order by num" % (uid))
-    return len(c.fetchall())
+    def GetUIDFromFileName(self, filename):
+        c = self.cursor
+        c.execute("select uid from sbx_meta where name = '%s'" % (filename))
+        res = c.fetchone()
+        if res:
+            return(res[0])
 
-def dbGetBlocksListFromUID(c, uid):
-    c.execute("SELECT num, fileid, pos from sbx_blocks where uid = '%i' group by num order by num" % (uid))
-    return c.fetchall()
+    def GetUIDFromSbxName(self, sbxname):
+        c = self.cursor
+        c.execute("select uid from sbx_meta where sbxname = '%s'" % (sbxname))
+        res = c.fetchone()
+        if res:
+            return(res[0])
 
-def dbGetUIDDataList(c):
-    c.execute("SELECT * from sbx_uids")
-    res = {row[0]:row[1] for row in c.fetchall()}
-    return res
+    def GetBlocksCountFromUID(self, uid):
+        c = self.cursor
+        c.execute("SELECT uid from sbx_blocks where uid = '%i' group by num order by num" % (uid))
+        return len(c.fetchall())
 
-def dbGetSourcesList(c):
-    c.execute("SELECT * FROM sbx_source")
-    return c.fetchall()
+    def GetBlocksListFromUID(self, uid):
+        c = self.cursor
+        c.execute("SELECT num, fileid, pos from sbx_blocks where uid = '%i' group by num order by num" % (uid))
+        return c.fetchall()
+
+    def GetUIDDataList(self):
+        c = self.cursor
+        c.execute("SELECT * from sbx_uids")
+        res = {row[0]:row[1] for row in c.fetchall()}
+        return res
+
+    def GetSourcesList(self):
+        c = self.cursor
+        c.execute("SELECT * FROM sbx_source")
+        return c.fetchall()
 
 
 def uniquifyFileName(filename):
@@ -126,7 +140,7 @@ def uniquifyFileName(filename):
     return filename
 
 
-def report(c, uidDataList, blocksizes):
+def report(db, uidDataList, blocksizes):
     """Create a report with the info obtained by SbxScan"""
     #just the basic info in CSV format for the moment
 
@@ -134,8 +148,8 @@ def report(c, uidDataList, blocksizes):
 
     for uid in uidDataList:
         hexdigits = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
-        metadata = dbGetMetaFromUID(c, uid)
-        blocksnum = dbGetBlocksCountFromUID(c, uid)
+        metadata = db.GetMetaFromUID(uid)
+        blocksnum = db.GetBlocksCountFromUID(uid)
         filename = metadata["filename"] if "filename" in metadata else ""
         sbxname = metadata["sbxname"] if "sbxname" in metadata else ""
         if "filesize" in metadata:
@@ -146,7 +160,8 @@ def report(c, uidDataList, blocksizes):
         print('"%s", %i, "%s", "%s"' %
               (hexdigits, filesize, sbxname, filename))
 
-def report_err(c, uiderrlist, uidDataList, blocksizes):
+
+def report_err(db, uiderrlist, uidDataList, blocksizes):
     """Create a report with recovery errors"""
     #just the basic info in CSV format for the moment
 
@@ -155,8 +170,8 @@ def report_err(c, uiderrlist, uidDataList, blocksizes):
         uid = info[0]
         errblocks = info[1]
         hexdigits = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
-        metadata = dbGetMetaFromUID(c, uid)
-        blocksnum = dbGetBlocksCountFromUID(c, uid)
+        metadata = db.GetMetaFromUID(uid)
+        blocksnum = db.GetBlocksCountFromUID(uid)
         filename = metadata["filename"] if "filename" in metadata else ""
         sbxname = metadata["sbxname"] if "sbxname" in metadata else ""
 
@@ -180,11 +195,10 @@ def main():
 
     #open database
     print("opening '%s' recovery info database..." % (dbfilename))
-    conn = sqlite3.connect(dbfilename)
-    c = conn.cursor()
+    db = RecDB(dbfilename)
 
     #get data on all uids present
-    uidDataList = dbGetUIDDataList(c)
+    uidDataList = db.GetUIDDataList()
 
     #get blocksizes for every supported SBx version
     blocksizes = {}
@@ -193,7 +207,7 @@ def main():
     
     #info/report
     if cmdline.info:
-        report(c, uidDataList, blocksizes)
+        report(db, uidDataList, blocksizes)
         errexit(0)
 
     #build a list of uid to recover:
@@ -207,20 +221,20 @@ def main():
                     errexit(1, "invalid UID!")
                 uid = int.from_bytes(binascii.unhexlify(hexuid),
                                      byteorder="big")
-                if dbGetBlocksCountFromUID(c, uid):
+                if db.GetBlocksCountFromUID(uid):
                     uidRecoList.append(uid)
                 else:
                     errexit(1,"no recoverable UID '%s'" % (hexuid))
         if cmdline.sbx:
             for sbxname in cmdline.sbx:
-                uid = dbGetUIDFromSbxName(c, sbxname)
+                uid = db.GetUIDFromSbxName(sbxname)
                 if uid:
                     uidRecoList.append(uid)
                 else:
                     errexit(1,"no recoverable sbx file '%s'" % (sbxname))
         if cmdline.file:
             for filename in cmdline.file:
-                uid = dbGetUIDFromFileName(c, filename)
+                uid = db.GetUIDFromFileName(filename)
                 if uid:
                     uidRecoList.append(uid)
                 else:
@@ -234,7 +248,7 @@ def main():
 
     #open all the sources
     finlist = {}
-    for key, value in dbGetSourcesList(c):
+    for key, value in db.GetSourcesList():
         finlist[key] = open(value, "rb")
 
     uidcount = 0
@@ -248,10 +262,10 @@ def main():
         hexuid = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
         print("UID %s (%i/%i)" % (hexuid, uidcount, len(uid_list)))
 
-        blocksnum = dbGetBlocksCountFromUID(c, uid)
+        blocksnum = db.GetBlocksCountFromUID(uid)
         print("  blocks: %i - size: %i bytes" %
               (blocksnum, blocksnum * sbx.blocksize))
-        meta = dbGetMetaFromUID(c, uid)
+        meta = db.GetMetaFromUID(uid)
         if "sbxname" in meta:
             sbxname = meta["sbxname"]
         else:
@@ -266,7 +280,7 @@ def main():
             sbxname = uniquifyFileName(sbxname)
         fout = open(sbxname, "wb", buffering = 1024*1024)
 
-        blockdatalist = dbGetBlocksListFromUID(c, uid)
+        blockdatalist = db.GetBlocksListFromUID(uid)
         #read 1 block to initialize the correct block parameters
         #(needed for filling in missing blocks)
         blockdata = blockdatalist[0]
@@ -317,7 +331,7 @@ def main():
         print("all SBx files recovered with no errors!")
     else:
         print("errors detected in %i SBx file(s)!" % len(uiderrlist))
-        report_err(c, uiderrlist, uidDataList, blocksizes)
+        report_err(db, uiderrlist, uidDataList, blocksizes)
 
             
 if __name__ == '__main__':
