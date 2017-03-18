@@ -5,6 +5,3 @@
              errors while encoding/decoding blocks
 
 - 12/03/2017 check if struct.pack&unpack is faster than to/from_bytes
-
-- 16/03/2017 sbxreco: default should probably nofill, with a --fill option
-             sbxscan: --step to specify scan steps != blocksize

@@ -68,9 +68,10 @@ def get_cmdline():
 def errexit(errlev=1, mess=""):
     """Display an error and exit."""
     if mess != "":
-        print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
+        sys.stderr.write("%s: error: %s\n" %
+                         (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
-      
+    
 
 def getsha256(filename):
     """SHA256 used to verify the integrity of the encoded file"""

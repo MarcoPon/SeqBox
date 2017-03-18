@@ -1,6 +1,7 @@
 # SeqBox - Sequenced Box container
 ### A single file container/archive that can be reconstructed even after total loss of file system structures.
 ![SBX-Logo](http://i.imgur.com/Ewper2w.png)
+
 An SBX container is composed of a collections of blocks with size sub/equal to that of a sector, so they can survive any level of fragmentation.. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
 Additional, non critical info/metadata are contained in block 0 (like name, file size, crypto-hash, other attributes, etc.).
 

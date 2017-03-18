@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.5b"
+PROGRAM_VER = "0.8.6b"
 
 def banner():
     """Display the usual presentation, version, (C) notices, etc."""
@@ -53,13 +53,15 @@ def get_cmdline():
                         help="database with recovery info")
     parser.add_argument("destpath", action="store", nargs="?", metavar="path",
                         help="destination path for recovered sbx files")
+    parser.add_argument("-all", action="store_true", help="recover all")
     parser.add_argument("-file", action="store", nargs="+", metavar="filename",
                         help="original filename(s) to recover")
     parser.add_argument("-sbx", action="store", nargs="+", metavar="filename",
                         help="SBX filename(s) to recover")
     parser.add_argument("-uid", action="store", nargs="+", metavar="uid",
                         help="UID(s) to recover")
-    parser.add_argument("-all", action="store_true", help="recover all")
+    parser.add_argument("-f", "--fill", action="store_true", default=False,
+                        help="fill-in missing blocks")
     parser.add_argument("-i", "--info", action="store_true", default=False,
                         help="show info on recoverable sbx file(s)")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
@@ -71,7 +73,8 @@ def get_cmdline():
 def errexit(errlev=1, mess=""):
     """Display an error and exit."""
     if mess != "":
-        print("%s: error: %s" % (os.path.split(sys.argv[0])[1], mess))
+        sys.stderr.write("%s: error: %s\n" %
+                         (os.path.split(sys.argv[0])[1], mess))
     sys.exit(errlev)
 
 
@@ -210,7 +213,7 @@ def main():
         report(db, uidDataList, blocksizes)
         errexit(0)
 
-    #build a list of uid to recover:
+    #build a list of uids to recover:
     uidRecoList = []
     if cmdline.all:
         uidRecoList = list(uidDataList)
@@ -300,10 +303,12 @@ def main():
             #check for missing blocks and fill in
             if bnum != lastblock +1 and bnum != 1:
                 for b in range(lastblock+1, bnum):
-                    sbx.blocknum = b
-                    sbx.data = bytes(sbx.datasize)
-                    buffer = sbx.encode()
-                    fout.write(buffer)
+                    #no point in an empty block 0 with no metadata
+                    if b > 0 and cmdline.fill:
+                        sbx.blocknum = b
+                        sbx.data = bytes(sbx.datasize)
+                        buffer = sbx.encode()
+                        fout.write(buffer)
                     missingblocks += 1
 
             fin = finlist[blockdata[1]]
@@ -314,7 +319,7 @@ def main():
             lastblock = bnum
 
             #some progress report
-            if time() > updatetime or bnum >= len(blockdatalist):
+            if time() > updatetime or bnum == maxbnum:
                 print("  %.1f%%" % (bnum*100.0/maxbnum), " ",
                       "(missing blocks: %i)" % missingblocks,
                       end="\r", flush=True)
