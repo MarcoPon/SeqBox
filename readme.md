@@ -33,7 +33,7 @@ Now to a practical example: let's see how 2 photos and their 2 SBX encoded versi
 
 We encode using SBXEnc, and then test the new file with SBXDec, to be sure all is OK.:
 
-![SBXEnc](http://i.imgur.com/SqQuWgF.png)
+![SBXEnc](http://i.imgur.com/GQOTMih.png)
 
 Same for the other file. Now we put both the JPEG and the SBX files in a floppy disk image already about half full, that have gone trough various cycles of updating and deleting. As a result the data is laid out like this:
 
@@ -61,15 +61,15 @@ To spice things up, the disk image file is run trough a scrambler, that swaps va
 
 Pretty nightmarish! Now on to SBXScan to search for pieces of SBX files around, and SBXReco to get a report of the collected data:
 
-![SBXScan Results](http://i.imgur.com/ZZ6gSGR.png)
+![SBXScan Results](http://i.imgur.com/hVgmH68.png)
 
 The 2 SBX container have been found, with all the metadata. So the original filesizes are also known, along with the names of the SBX files and the original ones. At this point it would be possible to recover singles files or a group of them, by UID or names, but we opt to recover everything:
 
-![SBXReco](http://i.imgur.com/HKw7rXv.png)
+![SBXReco](http://i.imgur.com/GJ9qbWC.png)
 
 All SBX files seems to have been recovered correctly. We start decoding:
 
-![SBXDec](http://i.imgur.com/G3wCY2m.png)
+![SBXDec](http://i.imgur.com/P7otaUR.png)
 
 And sure enough:
 
