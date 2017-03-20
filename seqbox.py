@@ -90,6 +90,8 @@ class sbxBlock():
         return (self.magic + crc + buffer)
 
     def decode(self, buffer):
+        #start setting an invalid block number
+        self.blocknum = -1
         #check the basics
         if len(buffer) != self.blocksize:
             return False

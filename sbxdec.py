@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.2b"
+PROGRAM_VER = "0.8.3b"
 
 
 def banner():
@@ -56,6 +56,8 @@ def get_cmdline():
                         help="test container integrity")
     parser.add_argument("-i", "--info", action="store_true", default=False,
                         help="show informations/metadata")
+    parser.add_argument("-c", "--continue", action="store_true", default=False,
+                        help="continue on errors", dest="cont")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing file")
     res = parser.parse_args()
@@ -110,7 +112,7 @@ def main():
     hashcheck = False
 
     buffer = fin.read(sbx.blocksize)
-    if not sbx.decode(buffer):
+    if not sbx.decode(buffer) and cmdline.cont == False:
         errexit(errlev=1, mess="invalid block at offset 0x0")
     if sbx.blocknum > 1:
         errexit(errlev=1, mess="blocks missing or out of order at offset 0x0")
@@ -178,18 +180,27 @@ def main():
     lastblocknum = 0
 
     filesize = 0
+    blockmiss = 0
     updatetime = time() 
     while True:
         buffer = fin.read(sbx.blocksize)
         if len(buffer) < sbx.blocksize:
             break
         if not sbx.decode(buffer):
-            errexit(errlev=1, mess="invalid block at offset %s" %
-                    (hex(fin.tell()-sbx.blocksize)))
+            if cmdline.cont:
+                blockmiss += 1
+                lastblocknum += 1
+            else:
+                errexit(errlev=1, mess="invalid block at offset %s" %
+                        (hex(fin.tell()-sbx.blocksize)))
         else:
             if sbx.blocknum > lastblocknum+1:
-                errexit(errlev=1, mess="block %i out of order or missing"
-                         % (lastblocknum+1))    
+                if cmdline.cont:
+                    blockmiss += 1
+                    lastblocknum += 1
+                else:
+                    errexit(errlev=1, mess="block %i out of order or missing"
+                             % (lastblocknum+1))    
             lastblocknum += 1
             if trimfilesize:
                 filesize += sbx.datasize
@@ -211,6 +222,9 @@ def main():
         fout.close()
 
     print("SBX decoding complete")
+    if blockmiss:
+        errexit(1, "missing blocks: %i" % blockmiss)
+
     if hashcheck:
         if hashtype == 0x12:
             print("SHA256", d.hexdigest())
