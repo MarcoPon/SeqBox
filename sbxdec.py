@@ -32,13 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.3b"
-
-
-def banner():
-    """Display the usual presentation, version, (C) notices, etc."""
-    print("\nSeqBox - Sequenced Box container - Decoder v%s" % (PROGRAM_VER),
-          " - (C) 2017 by M.Pontello\n")
+PROGRAM_VER = "0.8.4b"
 
 
 def get_cmdline():
@@ -48,7 +42,8 @@ def get_cmdline():
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-+')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBXDecoder v%s' % PROGRAM_VER)
+                        version='SeqBox - Sequenced Box container - ' +
+                        'Decoder v%s - (C) 2017 by M.Pontello' % PROGRAM_VER) 
     parser.add_argument("sbxfilename", action="store", help="SBx container")
     parser.add_argument("filename", action="store", nargs='?', 
                         help="target/decoded file")
@@ -57,7 +52,7 @@ def get_cmdline():
     parser.add_argument("-i", "--info", action="store_true", default=False,
                         help="show informations/metadata")
     parser.add_argument("-c", "--continue", action="store_true", default=False,
-                        help="continue on errors", dest="cont")
+                        help="continue on block errors", dest="cont")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing file")
     res = parser.parse_args()
@@ -83,7 +78,6 @@ def lastEofCount(data):
 
 def main():
 
-    banner()
     cmdline = get_cmdline()
 
     sbxfilename = cmdline.sbxfilename

@@ -32,13 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.5b"
-
-def banner():
-    """Display the usual presentation, version, (C) notices, etc."""
-    print("\nSeqBox - Sequenced Box container - Scanner v%s" % (PROGRAM_VER),
-          " - (C) 2017 by M.Pontello\n")
-
+PROGRAM_VER = "0.8.6b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -49,7 +43,8 @@ def get_cmdline():
              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
              prefix_chars='-', fromfile_prefix_chars='@')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBXScanner v%s' % PROGRAM_VER)
+                        version='SeqBox - Sequenced Box container - ' +
+                        'Scanner v%s - (C) 2017 by M.Pontello' % PROGRAM_VER) 
     parser.add_argument("filename", action="store", nargs="+",
                         help="file(s) to scan")
     parser.add_argument("-d", "--database", action="store", dest="dbfilename",
@@ -87,7 +82,6 @@ def getFileSize(filename):
 
 def main():
 
-    banner()
     cmdline = get_cmdline()
 
     filenames = []

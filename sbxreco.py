@@ -32,13 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.6b"
-
-def banner():
-    """Display the usual presentation, version, (C) notices, etc."""
-    print("\nSeqBox - Sequenced Box container - Recover v%s" % (PROGRAM_VER),
-          " - (C) 2017 by M.Pontello\n")
-
+PROGRAM_VER = "0.8.7b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -48,17 +42,18 @@ def get_cmdline():
              prefix_chars='-+',
              fromfile_prefix_chars='@')
     parser.add_argument("-v", "--version", action='version', 
-                        version='SBXRecover v%s' % PROGRAM_VER)
+                        version='SeqBox - Sequenced Box container - ' +
+                        'Recover v%s - (C) 2017 by M.Pontello' % PROGRAM_VER) 
     parser.add_argument("dbfilename", action="store", metavar="filename",
                         help="database with recovery info")
     parser.add_argument("destpath", action="store", nargs="?", metavar="path",
                         help="destination path for recovered sbx files")
-    parser.add_argument("-all", action="store_true", help="recover all")
-    parser.add_argument("-file", action="store", nargs="+", metavar="filename",
+    parser.add_argument("--all", action="store_true", help="recover all")
+    parser.add_argument("--file", action="store", nargs="+", metavar="filename",
                         help="original filename(s) to recover")
-    parser.add_argument("-sbx", action="store", nargs="+", metavar="filename",
+    parser.add_argument("--sbx", action="store", nargs="+", metavar="filename",
                         help="SBX filename(s) to recover")
-    parser.add_argument("-uid", action="store", nargs="+", metavar="uid",
+    parser.add_argument("--uid", action="store", nargs="+", metavar="uid",
                         help="UID(s) to recover")
     parser.add_argument("-f", "--fill", action="store_true", default=False,
                         help="fill-in missing blocks")
@@ -189,7 +184,6 @@ def report_err(db, uiderrlist, uidDataList, blocksizes):
 
 def main():
 
-    banner()
     cmdline = get_cmdline()
 
     dbfilename = cmdline.dbfilename
