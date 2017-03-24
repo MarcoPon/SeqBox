@@ -2,7 +2,7 @@
 ### A single file container/archive that can be reconstructed even after total loss of file system structures.
 ![SBX-Logo](http://i.imgur.com/Ewper2w.png)
 
-An SBX container is composed of a collections of blocks with size submultiple/equal to that of a sector, so they can survive any level of fragmentation.. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
+An SBX container is composed of a collections of blocks with size submultiple/equal to that of a sector, so they can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
 Additional, non critical info/metadata are contained in block 0 (like name, file size, crypto-hash, other attributes, etc.).
 
 If disaster strikes, recovery can be performed simply scanning a volume/image, reading sector sized slices and checking blocks signatures and then CRCs to detect valid SBX blocks. Then the blocks can be grouped by UIDs, sorted by sequence number and reassembled to form the original SeqBox containers.
@@ -137,3 +137,5 @@ The code was quickly hacked together in spare slices of time to verify the basic
 Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculated before any other file operation.
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
+Finally, the file content is not altered in any way, just re-framed.
+
