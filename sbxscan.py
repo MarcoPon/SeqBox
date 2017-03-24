@@ -32,7 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.6b"
+PROGRAM_VER = "0.8.7b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -106,6 +106,7 @@ def main():
     c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
     c.execute("CREATE TABLE sbx_uids (uid INTEGER, ver INTEGER)")
     c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fileid INTEGER, pos INTEGER )")
+    c.execute("CREATE INDEX blocks ON sbx_blocks (uid, num, pos)")
 
     #scan all the files/devices 
     sbx = seqbox.sbxBlock(ver=cmdline.sbxver)
