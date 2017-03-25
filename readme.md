@@ -81,7 +81,8 @@ And sure enough:
  - Encoding of photos on a SDCard - loss of images on perfectly functioning SDCards are known occurrences in the photography world, for example when low on battery and maybe with a camera/firmware with suboptimal monitoring & management strategies. If the photo files are fragmented, recovery tools can usually help only to a point. 
  - On-disk format for a File System. The trade-off in file size and performance (both should be fairly minimal anyway) could be interesting for some application. Maybe it could be a simple option (like compression in many FS). I plan to build a simple/toy FS with FUSE to test the concept, time permitting.
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
-
+ - Data hiding. SeqBox containers (or even fragments of them) can be put inside other files (for example at the end of a JPEG, in the middle of a document, etc.), sprayed somewhere in the unused space, between partitions, and so on. Incidentally, that means that if you are in the digital forensics sector, now you have one more thing to check for! 
+ 
 ## Tech spec
 Byte order: Big Endian
 ### Common blocks header:
