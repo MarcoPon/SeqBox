@@ -136,6 +136,10 @@ class sbxBlock():
                         self.metadata["hash"] = metabb
         return True
 
+class sbxEncDec():
+    def __init__(self, key):
+        self.key = 
+
 
 def main():
     print("SeqBox module!")
