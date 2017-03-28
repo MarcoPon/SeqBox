@@ -75,6 +75,8 @@ And sure enough:
 
 ![Castle](http://i.imgur.com/Qf0qrUp.jpg) ![Lake](http://i.imgur.com/9rH6tMf.jpg)
 
+N.B. Here's a [7-Zip archive](http://mark0.net/download/sbxdemo-diskimages.7z) with the 2 disk images used in the demo (542KB).
+
 ## Possible / hypothetical / ideal uses cases
  - Last step of a backup - after creating a compressed archive of something, the archive could be SeqBox encoded to increase recovery chances in the event of some software/hardware issues that cause logic / file system's damages.
  - Long term storage - since each block is CRC tagged, and a crypto-hash of the original content is stored, bitrot can be easily detected. In addition, if multiple copies are stored, in the same or different media, the container can be correctly restored with high degree of probability even if all the copies are subject to some damages (in different blocks).  
