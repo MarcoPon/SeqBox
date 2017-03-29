@@ -55,6 +55,8 @@ def get_cmdline():
                         help="continue on block errors", dest="cont")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing file")
+    parser.add_argument("-p", "--password", type=str, default="",
+                        help="encrypt with password", metavar="pass")
     res = parser.parse_args()
     return res
 
@@ -91,12 +93,16 @@ def main():
     fin = open(sbxfilename, "rb", buffering=1024*1024)
 
     #check magic and get version
-    if fin.read(3) != b"SBx":
-        errexit(1, "not a SeqBox file!")
-    sbxver = ord(fin.read(1))
+    header = fin.read(4)
     fin.seek(0, 0)
+    if cmdline.password:
+        e = seqbox.EncDec(cmdline.password, len(header))
+        header= e.Xor(header)
+    if header[:3] != b"SBx":
+        errexit(1, "not a SeqBox file!")
+    sbxver = header[3]
     
-    sbx = seqbox.sbxBlock(ver=sbxver)
+    sbx = seqbox.sbxBlock(ver=sbxver, pswd=cmdline.password)
     metadata = {}
     trimfilesize = False
 

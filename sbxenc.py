@@ -56,6 +56,8 @@ def get_cmdline():
                         help="use random or custom UID (up to 12 hexdigits)")
     parser.add_argument("-sv", "--sbxver", type=int, default=1,
                         help="SBX blocks version", metavar="n")
+    parser.add_argument("-p", "--password", type=str, default="",
+                        help="encrypt with password", metavar="pass")
     res = parser.parse_args()
     return res
 
@@ -116,7 +118,7 @@ def main():
     fin = open(filename, "rb", buffering=1024*1024)
     print("creating file '%s'..." % sbxfilename)
 
-    sbx = seqbox.sbxBlock(uid=uid, ver=cmdline.sbxver)
+    sbx = seqbox.sbxBlock(uid=uid, ver=cmdline.sbxver, pswd=cmdline.password)
     
     #write metadata block 0
     if not cmdline.nometa:

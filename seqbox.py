@@ -27,6 +27,7 @@ import os
 import sys
 import binascii
 import random
+import hashlib
 
 supported_vers = [1, 2]
     
@@ -35,7 +36,7 @@ class sbxBlock():
     Implement a basic SBX block
     """
 
-    def __init__(self, ver=1, uid="r"):
+    def __init__(self, ver=1, uid="r", pswd=""):
         self.ver = ver
         if ver == 1:
             self.blocksize = 512
@@ -57,6 +58,11 @@ class sbxBlock():
             self.uid = random.getrandbits(6*8).to_bytes(6, byteorder='big')
         else:
             self.uid = (b'\x00'*6 + uid)[-6:]
+
+        if pswd:
+            self.encdec = EncDec(pswd, self.blocksize)
+        else:
+            self.encdec = False
 
         self.parent_uid = 0
         self.metadata = {}
@@ -87,11 +93,17 @@ class sbxBlock():
                   self.blocknum.to_bytes(4, byteorder='big') +
                   data)
         crc = binascii.crc_hqx(buffer, self.ver).to_bytes(2,byteorder='big')
-        return (self.magic + crc + buffer)
+        block = self.magic + crc + buffer
+        if self.encdec:
+            block = self.encdec.Xor(block)
+        return block
 
     def decode(self, buffer):
         #start setting an invalid block number
         self.blocknum = -1
+        #decode eventual password
+        if self.encdec:
+            buffer = self.encdec.Xor(buffer)
         #check the basics
         if len(buffer) != self.blocksize:
             return False
@@ -136,9 +148,20 @@ class sbxBlock():
                         self.metadata["hash"] = metabb
         return True
 
-class sbxEncDec():
-    def __init__(self, key):
-        self.key = 
+
+class EncDec():
+    """Simple encoding/decoding function"""
+    def __init__(self, key, size):
+        d = hashlib.sha256()
+        d.update(key.encode())
+        self.key = d.digest()*(size//32+1)
+    def Xor(self, buffer):
+        #AES256 would have been better, but it's not in std Python 3.
+        #this will be OK for the moment...
+        res = []
+        for b in range(len(buffer)):
+            res.append(buffer[b] ^ self.key[b])
+        return bytes(res)
 
 
 def main():
