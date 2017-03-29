@@ -53,6 +53,7 @@ class sbxBlock():
         self.magic = b'SBx' + bytes([ver])
         self.blocknum = 0
 
+
         if uid == "r":
             random.seed()
             self.uid = random.getrandbits(6*8).to_bytes(6, byteorder='big')
@@ -151,21 +152,21 @@ class sbxBlock():
 
 class EncDec():
     """Simple encoding/decoding function"""
+    #AES256 would have been better, but it's not in std Python 3.
+    #this will be OK for the moment...
     def __init__(self, key, size):
         d = hashlib.sha256()
         d.update(key.encode())
-        self.key = d.digest()*(size//32+1)
+        digest = d.digest()*(size//32+1)
+        self.key = int(binascii.hexlify(digest[:size]), 16)
     def Xor(self, buffer):
-        #AES256 would have been better, but it's not in std Python 3.
-        #this will be OK for the moment...
-        res = []
-        for b in range(len(buffer)):
-            res.append(buffer[b] ^ self.key[b])
-        return bytes(res)
+        num = int(binascii.hexlify(buffer), 16) ^ self.key
+        return binascii.unhexlify(hex(num)[2:])
 
 
 def main():
     print("SeqBox module!")
+
     sys.exit(0)
 
 if __name__ == '__main__':
