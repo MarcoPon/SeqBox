@@ -152,13 +152,17 @@ class sbxBlock():
 
 class EncDec():
     """Simple encoding/decoding function"""
-    #AES256 would have been better, but it's not in std Python 3.
-    #this will be OK for the moment...
+    #it's not meant as 'strong encryption', but just to hide the presence
+    #of SBX blocks on a simple scan
     def __init__(self, key, size):
         d = hashlib.sha256()
-        d.update(key.encode())
-        digest = d.digest()*(size//32+1)
-        self.key = int(binascii.hexlify(digest[:size]), 16)
+        key = key.encode()
+        tempkey = key
+        while len(tempkey) < size:
+            d.update(tempkey)
+            key = d.digest()
+            tempkey += key
+        self.key = int(binascii.hexlify(tempkey[:size]), 16)
     def Xor(self, buffer):
         num = int(binascii.hexlify(buffer), 16) ^ self.key
         return binascii.unhexlify(hex(num)[2:])
