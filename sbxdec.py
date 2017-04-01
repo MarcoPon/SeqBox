@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.4b"
+PROGRAM_VER = "0.8.5b"
 
 
 def get_cmdline():

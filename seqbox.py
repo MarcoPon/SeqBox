@@ -155,6 +155,8 @@ class EncDec():
     #it's not meant as 'strong encryption', but just to hide the presence
     #of SBX blocks on a simple scan
     def __init__(self, key, size):
+        #key is kept as a bigint because a xor between two bigint is faster
+        #than byte-by-byte
         d = hashlib.sha256()
         key = key.encode()
         tempkey = key
