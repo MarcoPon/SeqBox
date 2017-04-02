@@ -29,7 +29,7 @@ import binascii
 import random
 import hashlib
 
-supported_vers = [1, 2]
+supported_vers = [1, 2, 3]
     
 class sbxBlock():
     """
@@ -46,6 +46,12 @@ class sbxBlock():
             #with different blocks versions/parameters.
             #or it could be good for CP/M! :)
             self.blocksize = 128
+            self.hdrsize = 16
+        elif ver == 3:
+            #and another one for big blocks, to be used just if absolute
+            #sure that the SBX file will not be used on a system with
+            #smaller blocks
+            self.blocksize = 4096
             self.hdrsize = 16
         else:
             raise version_not_supported #put in a proper exception
