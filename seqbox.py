@@ -39,9 +39,6 @@ class SbxError(Exception):
 class SbxDecodeError(SbxError):
     pass
 
-class SbxIOError(SbxError):
-    pass
-
     
 class SbxBlock():
     """
@@ -66,7 +63,7 @@ class SbxBlock():
             self.blocksize = 4096
             self.hdrsize = 16
         else:
-            raise sbxErr("Version %i not supported" % ver)
+            raise SbxError("version %i not supported" % ver)
         self.datasize = self.blocksize - self.hdrsize
         self.magic = b'SBx' + bytes([ver])
         self.blocknum = 0
@@ -125,17 +122,16 @@ class SbxBlock():
             buffer = self.encdec.xor(buffer)
         #check the basics
         if len(buffer) != self.blocksize:
-            return False
+            raise SbxDecodeError("bad block size")
         if buffer[:3] != self.magic[:3]:
-            return False
+            raise SbxDecodeError("not an SBX block")
         if not buffer[3] in supported_vers:
-            return False
+            raise SbxDecodeError("block v%i not supported" % buffer[3])
 
         #check CRC of rest of the block
         crc = int.from_bytes(buffer[4:6], byteorder='big') 
         if crc != binascii.crc_hqx(buffer[6:], self.ver):
-            return False
-
+            raise SbxDecodeError("bad CRC")
 
         self.parent_uid = 0
 

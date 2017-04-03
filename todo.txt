@@ -1,7 +1,4 @@
 - 27/02/2017 blake2 would be better than SHA256, but require Python >=3.6.
              SHA256 should be good enough for the moment.
 
-- 04/03/2017 check if raising exceptions is the best things to do for 
-             errors while encoding/decoding blocks
-
 - 12/03/2017 check if struct.pack&unpack is faster than to/from_bytes

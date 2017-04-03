@@ -112,8 +112,14 @@ def main():
     hashcheck = False
 
     buffer = fin.read(sbx.blocksize)
-    if not sbx.decode(buffer) and cmdline.cont == False:
-        errexit(errlev=1, mess="invalid block at offset 0x0")
+
+    try:
+        sbx.decode(buffer)
+    except seqbox.SbxDecodeError as err:
+        if cmdline.cont == False:
+            print(err)
+            errexit(errlev=1, mess="invalid block at offset 0x0")
+
     if sbx.blocknum > 1:
         errexit(errlev=1, mess="blocks missing or out of order at offset 0x0")
     elif sbx.blocknum == 0:
@@ -186,14 +192,9 @@ def main():
         buffer = fin.read(sbx.blocksize)
         if len(buffer) < sbx.blocksize:
             break
-        if not sbx.decode(buffer):
-            if cmdline.cont:
-                blockmiss += 1
-                lastblocknum += 1
-            else:
-                errexit(errlev=1, mess="invalid block at offset %s" %
-                        (hex(fin.tell()-sbx.blocksize)))
-        else:
+
+        try:
+            sbx.decode(buffer)
             if sbx.blocknum > lastblocknum+1:
                 if cmdline.cont:
                     blockmiss += 1
@@ -211,11 +212,20 @@ def main():
             if not cmdline.test:
                 fout.write(sbx.data)
 
-            #some progress report
-            if time() > updatetime: 
-                print("  %.1f%%" % (fin.tell()*100.0/sbxfilesize),
-                      end="\r", flush=True)
-                updatetime = time() + .1
+        except seqbox.SbxDecodeError as err:
+            if cmdline.cont:
+                blockmiss += 1
+                lastblocknum += 1
+            else:
+                print(err)
+                errexit(errlev=1, mess="invalid block at offset %s" %
+                        (hex(fin.tell()-sbx.blocksize)))
+
+        #some progress report
+        if time() > updatetime: 
+            print("  %.1f%%" % (fin.tell()*100.0/sbxfilesize),
+                  end="\r", flush=True)
+            updatetime = time() + .1
 
     fin.close()
     if not cmdline.test:

@@ -144,7 +144,8 @@ def main():
             #check for magic
             if buffer[:4] == magic:
                 #check for valid block
-                if sbx.decode(buffer):
+                try:
+                    sbx.decode(buffer)
                     #update uids table & list
                     if not sbx.uid in uids:
                         uids[sbx.uid] = True
@@ -172,6 +173,9 @@ def main():
                              sbx.metadata["filename"], sbx.metadata["sbxname"],
                              filenum))
                         docommit = True
+
+                except seqbox.SbxDecodeError:
+                    pass
 
             #status update
             if (time() > updatetime) or (pos >= filesize - scanstep):

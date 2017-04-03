@@ -59,6 +59,8 @@ def get_cmdline():
                         help="fill-in missing blocks")
     parser.add_argument("-i", "--info", action="store_true", default=False,
                         help="show info on recoverable sbx file(s)")
+    parser.add_argument("-p", "--password", type=str, default="",
+                        help="encrypt with password", metavar="pass")
     parser.add_argument("-o", "--overwrite", action="store_true", default=False,
                         help="overwrite existing sbx file(s)")
     res = parser.parse_args()
@@ -255,7 +257,7 @@ def main():
     for uid in uidRecoList:
         uidcount += 1
         sbxver = uidDataList[uid]
-        sbx = seqbox.SbxBlock(ver=sbxver)
+        sbx = seqbox.SbxBlock(ver=sbxver, pswd=cmdline.password)
         hexuid = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
         print("UID %s (%i/%i)" % (hexuid, uidcount, len(uid_list)))
 
@@ -284,7 +286,12 @@ def main():
         fin = finlist[blockdata[1]]
         bpos = blockdata[2]
         fin.seek(bpos, 0)
-        sbx.decode(fin.read(sbx.blocksize))
+        try:
+            sbx.decode(fin.read(sbx.blocksize))
+        except seqbox.SbxDecodeError as err:
+            print(err)
+            errexit(1, "invalid block at offset %s file '%s'" %
+                    (hex(bpos), fin.name))
         
         lastblock = -1
         ticks = 0
