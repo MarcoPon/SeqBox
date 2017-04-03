@@ -33,7 +33,21 @@ Now to a practical example: let's see how 2 photos and their 2 SBX encoded versi
 
 We encode using SBXEnc, and then test the new file with SBXDec, to be sure all is OK:
 
-![SBXEnc](http://i.imgur.com/GQOTMih.png)
+``` bash
+C:\t>sbxenc Lake.jpg
+hashing file 'Lake.jpg'...
+SHA256 3cfc376b6362444d2d25ebedb19e7594000f2ce2bdbb521d98f6c59b5adebfdc
+creating file 'Lake.jpg.sbx'...
+100%
+SBX file size: 343040 - blocks: 670 - overhead: 3.4%
+
+C:\t>sbxdec -t Lake.jpg.sbx
+decoding 'Lake.jpg.sbx'...
+metadata block found!
+SBX decoding complete
+SHA256 3cfc376b6362444d2d25ebedb19e7594000f2ce2bdbb521d98f6c59b5adebfdc
+hash match!
+```
 
 Same for the other file. Now we put both the JPEG and the SBX files in a floppy disk image already about half full, that have gone trough various cycles of updating and deleting. As a result the data is laid out like this:
 
@@ -61,15 +75,51 @@ To spice things up, the disk image file is run trough a scrambler, that swaps va
 
 Pretty nightmarish! Now on to SBXScan to search for pieces of SBX files around, and SBXReco to get a report of the collected data:
 
-![SBXScan Results](http://i.imgur.com/hVgmH68.png)
+```
+C:\t\recovered\sbx>sbxscan \t\scrambled.IMA
+creating 'sbxscan.db3' database...
+scanning file/device '\t\scrambled.IMA' (1/1)...
+100.0% blocks: 1087 - meta: 2 - files: 2 - 89.97MB/s
+scan completed!
+
+C:\t\recovered\sbx>sbxreco sbxscan.db3 -i
+opening 'sbxscan.db3' recovery info database...
+
+"UID", "filesize", "sbxname", "filename"
+"2818b123c00b", 206292, "Castle.jpg.sbx", "Castle.jpg"
+"76fe4a49ebf2", 331774, "Lake.jpg.sbx", "Lake.jpg"
+```
 
 The 2 SBX container have been found, with all the metadata. So the original filesizes are also known, along with the names of the SBX files and the original ones. At this point it would be possible to recover singles files or a group of them, by UID or names, but we opt to recover everything:
 
-![SBXReco](http://i.imgur.com/GJ9qbWC.png)
+```
+C:\t\recovered\sbx>sbxreco sbxscan.db3 --all
+opening 'sbxscan.db3' recovery info database...
+recovering SBX files...
+UID 2818b123c00b (1/2)
+  blocks: 417 - size: 213504 bytes
+  to: 'Castle.jpg.sbx'
+  100.0%   (missing blocks: 0)
+UID 76fe4a49ebf2 (2/2)
+  blocks: 670 - size: 343040 bytes
+  to: 'Lake.jpg.sbx'
+  100.0%   (missing blocks: 0)
+
+done.
+all SBx files recovered with no errors!
+```
 
 All SBX files seems to have been recovered correctly. We start decoding:
 
-![SBXDec](http://i.imgur.com/P7otaUR.png)
+```
+C:\t\recovered\sbx>sbxdec Lake.jpg.sbx
+decoding 'Lake.jpg.sbx'...
+metadata block found!
+creating file 'Lake.jpg'...
+SBX decoding complete
+SHA256 3cfc376b6362444d2d25ebedb19e7594000f2ce2bdbb521d98f6c59b5adebfdc
+hash match!
+```
 
 And sure enough:
 
@@ -84,7 +134,16 @@ N.B. Here's a [7-Zip archive](http://mark0.net/download/sbxdemo-diskimages.7z) w
  - On-disk format for a File System. The trade-off in file size and performance (both should be fairly minimal anyway) could be interesting for some application. Maybe it could be a simple option (like compression in many FS). I plan to build a simple/toy FS with FUSE to test the concept, time permitting.
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
  - Data hiding. SeqBox containers (or even fragments of them) can be put inside other files (for example at the end of a JPEG, in the middle of a document, etc.), sprayed somewhere in the unused space, between partitions, and so on. Incidentally, that means that if you are in the digital forensics sector, now you have one more thing to check for! 
- 
+
+## Testing
+
+Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. Then the image was quick-formatted with FAT and the VM shutdown.
+After that, from the host OS, recovery of the SBX files was attempted using SBXReco on the disk image.  
+
+- Working: FATnn/VFAT/exFAT, NTFS, Amiga FFS, EXT2/3/4, XFS, BTRFS, MINIX, BFS (Boot File System), BFS (Be File System), ZFS, Apple ProDOS, JFS.
+- Not working: Amiga OFS (488 bytes blocks)
+
+
 ## Tech spec
 Byte order: Big Endian
 ### Common blocks header:
@@ -133,6 +192,7 @@ Byte order: Big Endian
 | SNM | sbx filename (utf-8) |
 | FSZ | filesize (8 bytes) |
 | HSH | crypto hash (SHA256, using [Multihash](http://multiformats.io) protocol) |
+| PID | parent UID (not used at the moment)|
 (others IDs for file dates, attributes, etc. will be added...)
 
 ## Final notes

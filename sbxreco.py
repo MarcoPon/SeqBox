@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.7b"
+PROGRAM_VER = "0.8.8b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -200,7 +200,7 @@ def main():
     #get blocksizes for every supported SBx version
     blocksizes = {}
     for v in seqbox.supported_vers:
-        blocksizes[v] = seqbox.sbxBlock(ver=v).blocksize
+        blocksizes[v] = seqbox.SbxBlock(ver=v).blocksize
     
     #info/report
     if cmdline.info:
@@ -255,7 +255,7 @@ def main():
     for uid in uidRecoList:
         uidcount += 1
         sbxver = uidDataList[uid]
-        sbx = seqbox.sbxBlock(ver=sbxver)
+        sbx = seqbox.SbxBlock(ver=sbxver)
         hexuid = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
         print("UID %s (%i/%i)" % (hexuid, uidcount, len(uid_list)))
 

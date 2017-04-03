@@ -32,7 +32,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.5b"
+PROGRAM_VER = "0.8.6b"
 
 
 def get_cmdline():
@@ -97,12 +97,12 @@ def main():
     fin.seek(0, 0)
     if cmdline.password:
         e = seqbox.EncDec(cmdline.password, len(header))
-        header= e.Xor(header)
+        header= e.xor(header)
     if header[:3] != b"SBx":
         errexit(1, "not a SeqBox file!")
     sbxver = header[3]
     
-    sbx = seqbox.sbxBlock(ver=sbxver, pswd=cmdline.password)
+    sbx = seqbox.SbxBlock(ver=sbxver, pswd=cmdline.password)
     metadata = {}
     trimfilesize = False
 

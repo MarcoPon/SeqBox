@@ -32,7 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.8b"
+PROGRAM_VER = "0.8.9b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -111,13 +111,13 @@ def main():
     c.execute("CREATE INDEX blocks ON sbx_blocks (uid, num, pos)")
 
     #scan all the files/devices 
-    sbx = seqbox.sbxBlock(ver=cmdline.sbxver,pswd=cmdline.password)
+    sbx = seqbox.SbxBlock(ver=cmdline.sbxver,pswd=cmdline.password)
     offset = cmdline.offset
     filenum = 0
     uids = {}
     magic = b'SBx' + bytes([cmdline.sbxver])
     if cmdline.password:
-        magic = seqbox.EncDec(cmdline.password, len(magic)).Xor(magic)
+        magic = seqbox.EncDec(cmdline.password, len(magic)).xor(magic)
     scanstep = cmdline.step
     if scanstep == 0:
         scanstep = sbx.blocksize

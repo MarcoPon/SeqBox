@@ -30,8 +30,20 @@ import random
 import hashlib
 
 supported_vers = [1, 2, 3]
+
+
+#Some custom exceptions
+class SbxError(Exception):
+    pass
+
+class SbxDecodeError(SbxError):
+    pass
+
+class SbxIOError(SbxError):
+    pass
+
     
-class sbxBlock():
+class SbxBlock():
     """
     Implement a basic SBX block
     """
@@ -54,7 +66,7 @@ class sbxBlock():
             self.blocksize = 4096
             self.hdrsize = 16
         else:
-            raise version_not_supported #put in a proper exception
+            raise sbxErr("Version %i not supported" % ver)
         self.datasize = self.blocksize - self.hdrsize
         self.magic = b'SBx' + bytes([ver])
         self.blocknum = 0
@@ -102,7 +114,7 @@ class sbxBlock():
         crc = binascii.crc_hqx(buffer, self.ver).to_bytes(2,byteorder='big')
         block = self.magic + crc + buffer
         if self.encdec:
-            block = self.encdec.Xor(block)
+            block = self.encdec.xor(block)
         return block
 
     def decode(self, buffer):
@@ -110,7 +122,7 @@ class sbxBlock():
         self.blocknum = -1
         #decode eventual password
         if self.encdec:
-            buffer = self.encdec.Xor(buffer)
+            buffer = self.encdec.xor(buffer)
         #check the basics
         if len(buffer) != self.blocksize:
             return False
@@ -171,14 +183,13 @@ class EncDec():
             key = d.digest()
             tempkey += key
         self.key = int(binascii.hexlify(tempkey[:size]), 16)
-    def Xor(self, buffer):
+    def xor(self, buffer):
         num = int(binascii.hexlify(buffer), 16) ^ self.key
         return binascii.unhexlify(hex(num)[2:])
 
 
 def main():
     print("SeqBox module!")
-
     sys.exit(0)
 
 if __name__ == '__main__':

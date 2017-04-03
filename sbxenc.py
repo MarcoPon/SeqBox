@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.11b"
+PROGRAM_VER = "0.8.12b"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -118,7 +118,7 @@ def main():
     fin = open(filename, "rb", buffering=1024*1024)
     print("creating file '%s'..." % sbxfilename)
 
-    sbx = seqbox.sbxBlock(uid=uid, ver=cmdline.sbxver, pswd=cmdline.password)
+    sbx = seqbox.SbxBlock(uid=uid, ver=cmdline.sbxver, pswd=cmdline.password)
     
     #write metadata block 0
     if not cmdline.nometa:
