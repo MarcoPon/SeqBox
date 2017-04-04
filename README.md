@@ -135,26 +135,29 @@ N.B. Here's a [7-Zip archive](http://mark0.net/download/sbxdemo-diskimages.7z) w
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
  - Data hiding. SeqBox containers (or even fragments of them) can be put inside other files (for example at the end of a JPEG, in the middle of a document, etc.), sprayed somewhere in the unused space, between partitions, and so on. Incidentally, that means that if you are in the digital forensics sector, now you have one more thing to check for! 
 
-## Testing
+## Tests
 
-Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. Then the image was quick-formatted with FAT and the VM shutdown.
-After that, from the host OS, recovery of the SBX files was attempted using SBXReco on the disk image.  
+Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
+After that, from the host OS, recovery of the SBX files was attempted using SBXScan & BXReco on the disk image.  
 
-- Working: FATnn/VFAT/exFAT, NTFS, Amiga FFS, EXT2/3/4, XFS, BTRFS, MINIX, BFS (Boot File System), BFS (Be File System), ZFS, Apple ProDOS, JFS.
-- Not working: Amiga OFS (488 bytes blocks)
+- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, FFS, HFS+, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
+- **Not working**: Amiga OFS (due to 488 bytes blocks)
 
+Being written in Python 3, SeqBox tools are naturally multi-platform and have been tested successfully on various versions of Windows, on some Linux distros either on x86 or ARM, and on Android (via QPython). No test was done on OS X but it should works there as well (feedback welcome).   
+
+***
 
 ## Tech spec
 Byte order: Big Endian
 ### Common blocks header:
 
-| pos | to pos | size | desc              |
-|---- | ---    | ---- | ----------------- |
+| pos | to pos | size | desc                                |
+|---- | ---    | ---- | ----------------------------------- |
 |  0  |      2 |   3  | Recoverable Block signature = 'SBx' |
 |  3  |      3 |   1  | Version byte (1) |
 |  4  |      5 |   2  | CRC-16-CCITT of the rest of the block (Version is used as starting value) |
-|  6  |     11 |   6  | file UID |
-| 12  |     15 |   4  | Block sequence number |
+|  6  |     11 |   6  | file UID                            |
+| 12  |     15 |   4  | Block sequence number               |
 
 ### Block 0
 
@@ -192,7 +195,7 @@ Byte order: Big Endian
 | SNM | sbx filename (utf-8) |
 | FSZ | filesize (8 bytes) |
 | HSH | crypto hash (SHA256, using [Multihash](http://multiformats.io) protocol) |
-| PID | parent UID (not used at the moment)|
+| PID | parent UID (*not used at the moment*)|
 (others IDs for file dates, attributes, etc. will be added...)
 
 ## Final notes
@@ -200,5 +203,5 @@ The code was quickly hacked together in spare slices of time to verify the basic
 Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculated before any other file operation.
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
-Finally, the file content is not altered in any way, just re-framed.
+Finally, the file content is not altered in any way (except if a password is used).
 
