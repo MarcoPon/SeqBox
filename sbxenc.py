@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "0.8.12b"
+PROGRAM_VER = "1.0.0"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""

@@ -32,7 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "0.8.9b"
+PROGRAM_VER = "1.0.0"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
