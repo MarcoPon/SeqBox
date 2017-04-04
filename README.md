@@ -33,7 +33,7 @@ Now to a practical example: let's see how 2 photos and their 2 SBX encoded versi
 
 We encode using SBXEnc, and then test the new file with SBXDec, to be sure all is OK:
 
-``` bash
+```
 C:\t>sbxenc Lake.jpg
 hashing file 'Lake.jpg'...
 SHA256 3cfc376b6362444d2d25ebedb19e7594000f2ce2bdbb521d98f6c59b5adebfdc
@@ -133,15 +133,17 @@ N.B. Here's a [7-Zip archive](http://mark0.net/download/sbxdemo-diskimages.7z) w
  - Encoding of photos on a SDCard - loss of images on perfectly functioning SDCards are known occurrences in the photography world, for example when low on battery and maybe with a camera/firmware with suboptimal monitoring & management strategies. If the photo files are fragmented, recovery tools can usually help only to a point. 
  - On-disk format for a File System. The trade-off in file size and performance (both should be fairly minimal anyway) could be interesting for some application. Maybe it could be a simple option (like compression in many FS). I plan to build a simple/toy FS with FUSE to test the concept, time permitting.
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
- - Data hiding. SeqBox containers (or even fragments of them) can be put inside other files (for example at the end of a JPEG, in the middle of a document, etc.), sprayed somewhere in the unused space, between partitions, and so on. Incidentally, that means that if you are in the digital forensics sector, now you have one more thing to check for! 
+ - Data hiding. SeqBox containers (or even fragments of them) can be put inside other files (for example at the end of a JPEG, in the middle of a document, etc.), sprayed somewhere in the unused space, between partitions, and so on. 
+Incidentally, that means that if you are in the digital forensics sector, now you have one more thing to check for!
+If a password is used, the entire SBX file is *mangled* to look pseudo-random, and SBXScan, SBXReco & SBXDec will not be able to recognize it unless the same password is provided.
 
 ## Tests
 
 Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & BXReco on the disk image.  
 
-- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, FFS, HFS+, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
-- **Not working**: Amiga OFS (due to 488 bytes blocks)
+- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, AFFS, HFS+, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
+- **Not working**: OFS (due to 488 bytes blocks)
 
 Being written in Python 3, SeqBox tools are naturally multi-platform and have been tested successfully on various versions of Windows, on some Linux distros either on x86 or ARM, and on Android (via QPython). No test was done on OS X but it should works there as well (feedback welcome).   
 
@@ -154,7 +156,7 @@ Byte order: Big Endian
 | pos | to pos | size | desc                                |
 |---- | ---    | ---- | ----------------------------------- |
 |  0  |      2 |   3  | Recoverable Block signature = 'SBx' |
-|  3  |      3 |   1  | Version byte (1) |
+|  3  |      3 |   1  | Version byte |
 |  4  |      5 |   2  | CRC-16-CCITT of the rest of the block (Version is used as starting value) |
 |  6  |     11 |   6  | file UID                            |
 | 12  |     15 |   4  | Block sequence number               |
@@ -196,6 +198,7 @@ Byte order: Big Endian
 | FSZ | filesize (8 bytes) |
 | HSH | crypto hash (SHA256, using [Multihash](http://multiformats.io) protocol) |
 | PID | parent UID (*not used at the moment*)|
+
 (others IDs for file dates, attributes, etc. will be added...)
 
 ## Final notes
