@@ -139,8 +139,8 @@ If a password is used, the entire SBX file is *mangled* to look pseudo-random, a
 
 ## Tests
 
-Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
-After that, from the host OS, recovery of the SBX files was attempted using SBXScan & BXReco on the disk image.  
+Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
+After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
 
 - **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, AFFS, HFS+, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
 - **Not working**: OFS (due to 488 bytes blocks)
