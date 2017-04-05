@@ -142,7 +142,7 @@ If a password is used, the entire SBX file is *mangled* to look pseudo-random, a
 Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
 
-- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, AFFS, HFS+, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
+- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, AFFS, HFS+, HPFS, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
 - **Not working**: OFS (due to 488 bytes blocks)
 
 Being written in Python 3, SeqBox tools are naturally multi-platform and have been tested successfully on various versions of Windows, on some Linux distros either on x86 or ARM, and on Android (via QPython). No test was done on OS X but it should works there as well (feedback welcome).   
@@ -206,5 +206,5 @@ The code was quickly hacked together in spare slices of time to verify the basic
 Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculated before any other file operation.
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
-Finally, the file content is not altered in any way (except if a password is used).
+Finally, the file content is not altered in any way (except if a password is used), just re-framed.
 
