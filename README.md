@@ -142,8 +142,8 @@ If a password is used, the entire SBX file is *mangled* to look pseudo-random, a
 Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
 
-- **Working**: BeFS, BTRFS, EXT2/3/4, FATnn/VFAT/exFAT, AFFS, HFS+, HPFS, JFS, MINIX FS, NTFS, ProDOS, ReiserFS, XFS, ZFS.
-- **Not working**: OFS (due to 488 bytes blocks)
+- **Working**: [ADFS](https://en.wikipedia.org/wiki/Advanced_Disc_Filing_System), [AFFS](https://en.wikipedia.org/wiki/Amiga_Fast_File_System), [BeFS](https://en.wikipedia.org/wiki/Be_File_System), [BtrFS](https://en.wikipedia.org/wiki/Btrfs), [EXT2/3/4](https://en.wikipedia.org/wiki/Extended_file_system), [FATnn/VFAT/exFAT](https://en.wikipedia.org/wiki/File_Allocation_Table), [HFS+](https://en.wikipedia.org/wiki/HFS_Plus), [HPFS](https://en.wikipedia.org/wiki/High_Performance_File_System), [JFS](https://en.wikipedia.org/wiki/JFS_(file_system)), [MINIX FS](https://en.wikipedia.org/wiki/MINIX_file_system), [NTFS](https://en.wikipedia.org/wiki/NTFS), [ProDOS](https://en.wikipedia.org/wiki/Apple_ProDOS), [ReiserFS](https://en.wikipedia.org/wiki/ReiserFS), [XFS](https://en.wikipedia.org/wiki/XFS), [ZFS](https://en.wikipedia.org/wiki/ZFS).
+- **Not working**: [OFS](https://en.wikipedia.org/wiki/Amiga_Old_File_System) (due to 488 bytes blocks)
 
 Being written in Python 3, SeqBox tools are naturally multi-platform and have been tested successfully on various versions of Windows, on some Linux distros either on x86 or ARM, and on Android (via QPython). No test was done on OS X but it should works there as well (feedback welcome).   
 
@@ -180,6 +180,14 @@ Byte order: Big Endian
 |---- | -------- | ---- | ---------------- |
 | 16  | n        | var  | data             |
 | n+1 | blockend | var  | padding (0x1a)   |
+
+### Versions:
+N.B. Current versions differs only by blocksize.
+| ver | blocksize | note    |
+|---- | --------- | ------- |
+|  1  | 512       | default |
+|  2  | 128       |         |
+|  3  | 4096      |         |
 
 ### Metadata encoding:
 
