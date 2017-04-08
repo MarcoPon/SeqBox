@@ -2,7 +2,7 @@
 ### A single file container/archive that can be reconstructed even after total loss of file system structures.
 ![SBX-Logo](http://i.imgur.com/Ewper2w.png)
 
-An SBX container is composed of a collections of blocks with size submultiple/equal to that of a sector, so they can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
+An SBX container is composed of a collections of blocks with size sub-multiple/equal to that of a sector, so they can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
 Additional, non critical info/metadata are contained in block 0 (like name, file size, crypto-hash, other attributes, etc.).
 
 If disaster strikes, recovery can be performed simply scanning a volume/image, reading sector sized slices and checking blocks signatures and then CRCs to detect valid SBX blocks. Then the blocks can be grouped by UIDs, sorted by sequence number and reassembled to form the original SeqBox containers.
@@ -66,9 +66,9 @@ As expected, something has been recovered. But the 2 files size are off (280K an
 
 ![Castle](http://i.imgur.com/kP0jwyC.jpg) ![Lake](http://i.imgur.com/GyOonct.jpg)
 
-Other popular recovery tools lead to the same results. It's not anyone fault: it's just not possible to know how the various fragment are concatenated, without an index or some kind of list.
+Other popular recovery tools lead to the same results. It's not anyone fault: it's just not possible to know how the various fragment are concatenated, without an index or some kind of list (there are approaches based on file type validators that can in at least some cases differentiate between spurious and *valid* blocks, but that's beside the point).
 
-But with a SBX file is a different story. Each one of its block can't be fragmented more, and contains all the needed data to be put in its proper place in sequence. So let's proceed with the recovery of the SBX files.
+But with a SBX file it's a different story. Each one of its block can't be fragmented more, and contains all the needed data to be put in its proper place in sequence. So let's proceed with the recovery of the SBX files.
 To spice things up, the disk image file is run trough a scrambler, that swaps variable sized blocks of sectors around. The resulting layout is now this:
 
 ![Scrambled](http://i.imgur.com/jmOWult.png)
