@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.0"
+PROGRAM_VER = "1.0.1"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -125,6 +125,8 @@ def main():
         sbx.metadata = {"filesize":filesize,
                         "filename":os.path.split(filename)[1],
                         "sbxname":os.path.split(sbxfilename)[1],
+                        "filedatetime":int(os.path.getmtime(filename)),
+                        "sbxdatetime":int(time()),
                         "hash":b'\x12\x20'+sha256} #multihash
         fout.write(sbx.encode())
     

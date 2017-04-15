@@ -28,11 +28,11 @@ import sys
 import hashlib
 import argparse
 import binascii
-from time import time
+import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.0"
+PROGRAM_VER = "1.0.1"
 
 
 def get_cmdline():
@@ -154,6 +154,14 @@ def main():
                 print("  file name: '%s'" % (metadata["filename"]))
             if "filesize" in metadata:
                 print("  file size: %i bytes" % (metadata["filesize"]))
+            if "sbxdatetime" in metadata:
+                print("  SBX date&time : %s" %
+                      (time.strftime("%Y-%m-%d %H:%M:%S",
+                                     time.localtime(metadata["sbxdatetime"]))))
+            if "filedatetime" in metadata:
+                print("  file date&time: %s" %
+                      (time.strftime("%Y-%m-%d %H:%M:%S",
+                                     time.localtime(metadata["filedatetime"]))))
             if "hash" in metadata:
                 if hashtype == 0x12:
                     print("  SHA256: %s" % (binascii.hexlify(
@@ -187,7 +195,7 @@ def main():
 
     filesize = 0
     blockmiss = 0
-    updatetime = time() 
+    updatetime = time.time() 
     while True:
         buffer = fin.read(sbx.blocksize)
         if len(buffer) < sbx.blocksize:
@@ -222,14 +230,18 @@ def main():
                         (hex(fin.tell()-sbx.blocksize)))
 
         #some progress report
-        if time() > updatetime: 
+        if time.time() > updatetime: 
             print("  %.1f%%" % (fin.tell()*100.0/sbxfilesize),
                   end="\r", flush=True)
-            updatetime = time() + .1
+            updatetime = time.time() + .1
 
     fin.close()
     if not cmdline.test:
         fout.close()
+        if metadata:
+            if "filedatetime" in metadata:
+                os.utime(filename,
+                         (int(time.time()), metadata["filedatetime"]))
 
     print("SBX decoding complete")
     if blockmiss:

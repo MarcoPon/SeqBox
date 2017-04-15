@@ -100,6 +100,12 @@ class SbxBlock():
             if "filesize" in self.metadata:
                 bb = self.metadata["filesize"].to_bytes(8, byteorder='big')
                 self.data += b"FSZ" + bytes([len(bb)]) + bb
+            if "filedatetime" in self.metadata:
+                bb = self.metadata["filedatetime"].to_bytes(8, byteorder='big')
+                self.data += b"FDT" + bytes([len(bb)]) + bb
+            if "sbxdatetime" in self.metadata:
+                bb = self.metadata["sbxdatetime"].to_bytes(8, byteorder='big')
+                self.data += b"SDT" + bytes([len(bb)]) + bb
             if "hash" in self.metadata:
                 bb = self.metadata["hash"]
                 self.data += b"HSH" + bytes([len(bb)]) + bb
@@ -159,6 +165,10 @@ class SbxBlock():
                         self.metadata["sbxname"] = metabb.decode('utf-8')
                     if metaid == b'FSZ':
                         self.metadata["filesize"] = int.from_bytes(metabb, byteorder='big')
+                    if metaid == b'FDT':
+                        self.metadata["filedatetime"] = int.from_bytes(metabb, byteorder='big')
+                    if metaid == b'SDT':
+                        self.metadata["sbxdatetime"] = int.from_bytes(metabb, byteorder='big')
                     if metaid == b'HSH':
                         self.metadata["hash"] = metabb
         return True

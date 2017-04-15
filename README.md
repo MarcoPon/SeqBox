@@ -139,7 +139,7 @@ If a password is used, the entire SBX file is *mangled* to look pseudo-random, a
 
 ## Tests
 
-Seqbox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
+SeqBox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
 
 - **Working**: [ADFS](https://en.wikipedia.org/wiki/Advanced_Disc_Filing_System), [AFFS](https://en.wikipedia.org/wiki/Amiga_Fast_File_System), [APFS](https://en.wikipedia.org/wiki/Apple_File_System), [BeFS](https://en.wikipedia.org/wiki/Be_File_System), [BtrFS](https://en.wikipedia.org/wiki/Btrfs), [EXT2/3/4](https://en.wikipedia.org/wiki/Extended_file_system), [F2FS](https://en.wikipedia.org/wiki/F2FS), [FATnn/VFAT/exFAT](https://en.wikipedia.org/wiki/File_Allocation_Table), [HFS](https://en.wikipedia.org/wiki/Hierarchical_File_System) [HFS+](https://en.wikipedia.org/wiki/HFS_Plus), [HPFS](https://en.wikipedia.org/wiki/High_Performance_File_System), [JFS](https://en.wikipedia.org/wiki/JFS_(file_system)), [MFS](https://en.wikipedia.org/wiki/Macintosh_File_System), [MINIX FS](https://en.wikipedia.org/wiki/MINIX_file_system), [NTFS](https://en.wikipedia.org/wiki/NTFS), [ProDOS](https://en.wikipedia.org/wiki/Apple_ProDOS), [ReiserFS](https://en.wikipedia.org/wiki/ReiserFS), [UFS](https://en.wikipedia.org/wiki/Unix_File_System), [XFS](https://en.wikipedia.org/wiki/XFS), [ZFS](https://en.wikipedia.org/wiki/ZFS).
@@ -205,6 +205,8 @@ N.B. Current versions differs only by blocksize.
 | FNM | filename (utf-8) |
 | SNM | sbx filename (utf-8) |
 | FSZ | filesize (8 bytes) |
+| FDT | date & time (8 bytes, seconds since epoch) |
+| SDT | sbx date & time (8 bytes) |
 | HSH | crypto hash (SHA256, using [Multihash](http://multiformats.io) protocol) |
 | PID | parent UID (*not used at the moment*)|
 
