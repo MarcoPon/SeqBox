@@ -28,11 +28,11 @@ import sys
 import argparse
 import binascii
 import sqlite3
-from time import time
+import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.0"
+PROGRAM_VER = "1.0.1"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -91,6 +91,8 @@ class RecDB():
             meta["filesize"] = res[1]
             meta["filename"] = res[2]
             meta["sbxname"] = res[3]
+            meta["filedatetime"] = res[4]
+            meta["sbxdatetime"] = res[5]
         return meta
 
     def GetUIDFromFileName(self, filename):
@@ -144,7 +146,7 @@ def report(db, uidDataList, blocksizes):
     """Create a report with the info obtained by SbxScan"""
     #just the basic info in CSV format for the moment
 
-    print('\n"UID", "filesize", "sbxname", "filename"')
+    print('\n"UID", "filesize", "sbxname", "filename", "filedatetime"')
 
     for uid in uidDataList:
         hexdigits = binascii.hexlify(uid.to_bytes(6, byteorder="big")).decode()
@@ -156,9 +158,14 @@ def report(db, uidDataList, blocksizes):
             filesize = metadata["filesize"]
         else:
             filesize = blocksnum * blocksizes[uidDataList[uid]]
+        filedatetime = "n/a"
+        if "filedatetime" in metadata:
+            if metadata["filedatetime"] >= 0:
+                filedatetime = time.strftime("%Y-%m-%d %H:%M:%S",
+                                     time.localtime(metadata["filedatetime"]))
         
-        print('"%s", %i, "%s", "%s"' %
-              (hexdigits, filesize, sbxname, filename))
+        print('"%s", %i, "%s", "%s", "%s"' %
+              (hexdigits, filesize, sbxname, filename, filedatetime))
 
 
 def report_err(db, uiderrlist, uidDataList, blocksizes):
@@ -296,7 +303,7 @@ def main():
         lastblock = -1
         ticks = 0
         missingblocks = 0
-        updatetime = time() -1
+        updatetime = time.time() -1
         maxbnum =  blockdatalist[-1][0]
         #loop trough the block list and recreate SBx file
         for blockdata in blockdatalist:
@@ -320,13 +327,17 @@ def main():
             lastblock = bnum
 
             #some progress report
-            if time() > updatetime or bnum == maxbnum:
+            if time.time() > updatetime or bnum == maxbnum:
                 print("  %.1f%%" % (bnum*100.0/maxbnum), " ",
                       "(missing blocks: %i)" % missingblocks,
                       end="\r", flush=True)
-                updatetime = time() + .5
+                updatetime = time.time() + .5
 
         fout.close()
+        #set sbx date&time
+        if meta["sbxdatetime"] >= 0:
+            os.utime(sbxname, (int(time.time()), meta["sbxdatetime"]))
+        
         print()
         if missingblocks > 0:
             uiderrlist.append((uid, missingblocks))

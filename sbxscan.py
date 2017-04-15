@@ -32,7 +32,7 @@ import sqlite3
 
 import seqbox
 
-PROGRAM_VER = "1.0.0"
+PROGRAM_VER = "1.0.1"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -105,7 +105,7 @@ def main():
     conn = sqlite3.connect(dbfilename)
     c = conn.cursor()
     c.execute("CREATE TABLE sbx_source (id INTEGER, name TEXT)")
-    c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, fileid INTEGER)")
+    c.execute("CREATE TABLE sbx_meta (uid INTEGER, size INTEGER, name TEXT, sbxname TEXT, datetime INTEGER, sbxdatetime INTEGER, fileid INTEGER)")
     c.execute("CREATE TABLE sbx_uids (uid INTEGER, ver INTEGER)")
     c.execute("CREATE TABLE sbx_blocks (uid INTEGER, num INTEGER, fileid INTEGER, pos INTEGER )")
     c.execute("CREATE INDEX blocks ON sbx_blocks (uid, num, pos)")
@@ -166,11 +166,16 @@ def main():
                     #update meta table
                     if sbx.blocknum == 0:
                         blocksmetafound += 1
+                        if not "filedatetime" in sbx.metadata:
+                            sbx.metadata["filedatetime"] = -1
+                            sbx.metadata["sbxdatetime"] = -1
+
                         c.execute(
-                            "INSERT INTO sbx_meta (uid , size, name, sbxname, fileid) VALUES (?, ?, ?, ?, ?)",
+                            "INSERT INTO sbx_meta (uid , size, name, sbxname, datetime, sbxdatetime, fileid) VALUES (?, ?, ?, ?, ?, ?, ?)",
                             (int.from_bytes(sbx.uid, byteorder='big'),
                              sbx.metadata["filesize"],
                              sbx.metadata["filename"], sbx.metadata["sbxname"],
+                             sbx.metadata["filedatetime"], sbx.metadata["sbxdatetime"],
                              filenum))
                         docommit = True
 
