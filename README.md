@@ -2,7 +2,9 @@
 ### A single file container/archive that can be reconstructed even after total loss of file system structures.
 ![SBX-Logo](http://i.imgur.com/Ewper2w.png)
 
-An SBX container is composed of a collections of blocks with size sub-multiple/equal to that of a sector, so they can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
+An SBX container exists both as a normal file in a mounted file system, and as a collection of recognizable blocks at a lower level.
+
+SBX blocks have a size sub-multiple/equal to that of a sector, so they can survive any level of fragmentation. Each block have a minimal header that include a unique file identifier, block sequence number, checksum, version.
 Additional, non critical info/metadata are contained in block 0 (like name, file size, crypto-hash, other attributes, etc.).
 
 If disaster strikes, recovery can be performed simply scanning a volume/image, reading sector sized slices and checking blocks signatures and then CRCs to detect valid SBX blocks. Then the blocks can be grouped by UIDs, sorted by sequence number and reassembled to form the original SeqBox containers.
@@ -129,7 +131,8 @@ N.B. Here's a [7-Zip archive](http://mark0.net/download/sbxdemo-diskimages.7z) w
 
 ## Possible / hypothetical / ideal uses cases
  - Last step of a backup - after creating a compressed archive of something, the archive could be SeqBox encoded to increase recovery chances in the event of some software/hardware issues that cause logic / file system's damages.
- - Long term storage - since each block is CRC tagged, and a crypto-hash of the original content is stored, bitrot can be easily detected. In addition, if multiple copies are stored, in the same or different media, the container can be correctly restored with high degree of probability even if all the copies are subject to some damages (in different blocks).  
+ - Exchange data between different systems regardless of the file system used
+ -  Long term storage - since each block is CRC tagged, and a crypto-hash of the original content is stored, bitrot can be easily detected. In addition, if multiple copies are stored, in the same or different media, the container can be correctly restored with high degree of probability even if all the copies are subject to some damages (in different blocks).  
  - Encoding of photos on a SDCard - loss of images on perfectly functioning SDCards are known occurrences in the photography world, for example when low on battery and maybe with a camera/firmware with suboptimal monitoring & management strategies. If the photo files are fragmented, recovery tools can usually help only to a point. 
  - On-disk format for a File System. The trade-off in file size and performance (both should be fairly minimal anyway) could be interesting for some application. Maybe it could be a simple option (like compression in many FS). I plan to build a simple/toy FS with FUSE to test the concept, time permitting.
  - Probably less interesting, but a SeqBox container can also be splitted very easily, with no particular precautions aside from doing that on blocksize multiples. So any tool that have for example 1KB granularity, can be used. Additionally, there's no need to use special naming conventions, numbering files, etc., as the SBX container can be reassembled exactly like when doing a recovery. 
@@ -139,9 +142,8 @@ If a password is used, the entire SBX file is *mangled* to look pseudo-random, a
 
 ## Tests
 
-SeqBox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine to format a small (about 100MB) disk image with a certain FS, filling it with a number of small files, then deleting some randomly to free enough space to copy a serie of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
+SeqBox recoverability have been practically tested with a number of File Systems. The procedure involved using a Virtual Machine (or a full blown emulator) to format a small disk image with a certain FS, filling it with a number of small files, then deleting some of them randomly to free enough space to copy a series of SBX files. This way every SBX file results fragmented in a lot of smaller pieces. Then the image was quick-formatted, wipefs-ed and the VM shutdown.
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
-N.B. For some tests an emulator was used instead of a VM, or the disk image was smaller/larger depending on FS requirements, etc. 
 
 - **Working**: [ADFS](https://en.wikipedia.org/wiki/Advanced_Disc_Filing_System), [AFFS](https://en.wikipedia.org/wiki/Amiga_Fast_File_System), [APFS](https://en.wikipedia.org/wiki/Apple_File_System), [BeFS](https://en.wikipedia.org/wiki/Be_File_System), [BtrFS](https://en.wikipedia.org/wiki/Btrfs), [EXT2/3/4](https://en.wikipedia.org/wiki/Extended_file_system), [F2FS](https://en.wikipedia.org/wiki/F2FS), [FATnn/VFAT/exFAT](https://en.wikipedia.org/wiki/File_Allocation_Table), [HAMMER](https://en.wikipedia.org/wiki/HAMMER), [HFS](https://en.wikipedia.org/wiki/Hierarchical_File_System), [HFS+](https://en.wikipedia.org/wiki/HFS_Plus), [HPFS](https://en.wikipedia.org/wiki/High_Performance_File_System), [JFS](https://en.wikipedia.org/wiki/JFS_(file_system)), [MFS](https://en.wikipedia.org/wiki/Macintosh_File_System), [MINIX FS](https://en.wikipedia.org/wiki/MINIX_file_system), [NTFS](https://en.wikipedia.org/wiki/NTFS), [ProDOS](https://en.wikipedia.org/wiki/Apple_ProDOS), [ReFS](https://en.wikipedia.org/wiki/ReFS), [ReiserFS](https://en.wikipedia.org/wiki/ReiserFS), [UFS](https://en.wikipedia.org/wiki/Unix_File_System), [XFS](https://en.wikipedia.org/wiki/XFS), [ZFS](https://en.wikipedia.org/wiki/ZFS).
 - **Not working**: [OFS](https://en.wikipedia.org/wiki/Amiga_Old_File_System) (due to 488 bytes blocks)
