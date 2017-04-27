@@ -216,7 +216,7 @@ N.B. Current versions differs only by blocksize.
 (others IDs for file dates, attributes, etc. will be added...)
 
 ## Final notes
-The code was quickly hacked together in spare slices of time to verify the basic idea, so it will benefit for some refactoring, in time.
+The code was quickly hacked together in spare slices of time to verify the basic idea, so it's not optimized for speed and will benefit for some refactoring, in time.
 Still, the current block format is stable and some precautions have been taken to ensure that any encoded file could be correctly decoded. For example, the SHA256 hash that is stored as metadata is calculated before any other file operation.
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
@@ -226,3 +226,11 @@ Finally, the file content is not altered in any way (except if a password is use
 
  - [SeqBox home page](http://mark0.net/soft-seqbox-e.html)
  - [SeqBox GitHub repository](https://github.com/MarcoPon/SeqBox)
+
+## Contacts
+
+If you need more info, want to get in touch, or donate: [Marco Pontello](http://mark0.net/contacts-e.html)
+
+**Bitcoin**: 1Mark1tF6QGj112F5d3fQALGf41YfzXEK3
+
+![Qr-Code](http://mark0.net/images/qrcode.png) 
