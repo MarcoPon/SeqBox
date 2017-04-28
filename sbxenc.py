@@ -33,7 +33,7 @@ from time import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.1"
+PROGRAM_VER = "1.0.2"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -86,7 +86,7 @@ def main():
     filename = cmdline.filename
     sbxfilename = cmdline.sbxfilename
     if not sbxfilename:
-        sbxfilename = filename + ".sbx"
+        sbxfilename = os.path.split(filename)[1] + ".sbx"
     elif os.path.isdir(sbxfilename):
         sbxfilename = os.path.join(sbxfilename,
                                    os.path.split(filename)[1] + ".sbx")
