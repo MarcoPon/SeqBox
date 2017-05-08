@@ -32,7 +32,7 @@ import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.1"
+PROGRAM_VER = "1.0.2"
 
 
 def get_cmdline():
@@ -176,7 +176,7 @@ def main():
             if "filename" in metadata:
                 filename = metadata["filename"]
             else:
-                filename = sbxfilename + ".out"
+                filename = os.path.split(sbxfilename)[1] + ".out"
         elif os.path.isdir(filename):
             if "filename" in metadata:
                 filename = os.path.join(filename, metadata["filename"])
