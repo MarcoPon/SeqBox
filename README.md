@@ -146,7 +146,11 @@ SeqBox recoverability have been practically tested with a number of File Systems
 After that, from the host OS, recovery of the SBX files was attempted using SBXScan & SBXReco on the disk image.  
 
 - **Working**: [ADFS](https://en.wikipedia.org/wiki/Advanced_Disc_Filing_System), [AFFS](https://en.wikipedia.org/wiki/Amiga_Fast_File_System), [APFS](https://en.wikipedia.org/wiki/Apple_File_System), [BeFS](https://en.wikipedia.org/wiki/Be_File_System), [BtrFS](https://en.wikipedia.org/wiki/Btrfs), [EXT2/3/4](https://en.wikipedia.org/wiki/Extended_file_system), [F2FS](https://en.wikipedia.org/wiki/F2FS), [FATnn/VFAT/exFAT](https://en.wikipedia.org/wiki/File_Allocation_Table), [HAMMER](https://en.wikipedia.org/wiki/HAMMER), [HFS](https://en.wikipedia.org/wiki/Hierarchical_File_System), [HFS+](https://en.wikipedia.org/wiki/HFS_Plus), [HPFS](https://en.wikipedia.org/wiki/High_Performance_File_System), [JFS](https://en.wikipedia.org/wiki/JFS_(file_system)), [MFS](https://en.wikipedia.org/wiki/Macintosh_File_System), [MINIX FS](https://en.wikipedia.org/wiki/MINIX_file_system), [NTFS](https://en.wikipedia.org/wiki/NTFS), [ProDOS](https://en.wikipedia.org/wiki/Apple_ProDOS), [ReFS](https://en.wikipedia.org/wiki/ReFS), [ReiserFS](https://en.wikipedia.org/wiki/ReiserFS), [UFS](https://en.wikipedia.org/wiki/Unix_File_System), [XFS](https://en.wikipedia.org/wiki/XFS), [ZFS](https://en.wikipedia.org/wiki/ZFS).
-- **Not working**: [OFS](https://en.wikipedia.org/wiki/Amiga_Old_File_System) (due to 488 bytes blocks)
+
+- **Not working**: [OFS](https://en.wikipedia.org/wiki/Amiga_Old_File_System) (due to 488 data bytes per 512 bytes sector)
+
+
+**N.B.** Obviously SBX blocks can't be found if File System encryption is used. Compression too (mostly, but not always). Striping/RAID instead is usually not a problem. 
 
 Being written in Python 3, SeqBox tools are naturally multi-platform and have been tested successfully on various versions of Windows, on OS X & macOS, on some Linux distros either on x86 or ARM, on FreeBSD and on Android (via QPython).   
 
