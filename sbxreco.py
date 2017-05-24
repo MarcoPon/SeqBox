@@ -32,7 +32,7 @@ import time
 
 import seqbox
 
-PROGRAM_VER = "1.0.1"
+PROGRAM_VER = "1.0.2"
 
 def get_cmdline():
     """Evaluate command line parameters, usage & help."""
@@ -335,8 +335,9 @@ def main():
 
         fout.close()
         #set sbx date&time
-        if meta["sbxdatetime"] >= 0:
-            os.utime(sbxname, (int(time.time()), meta["sbxdatetime"]))
+        if "sbxdatetime" in meta:
+            if meta["sbxdatetime"] >= 0:
+                os.utime(sbxname, (int(time.time()), meta["sbxdatetime"]))
         
         print()
         if missingblocks > 0:

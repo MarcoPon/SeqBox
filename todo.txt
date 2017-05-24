@@ -2,3 +2,6 @@
              SHA256 should be good enough for the moment.
 
 - 12/03/2017 check if struct.pack&unpack is faster than to/from_bytes
+
+- 21/05/2017 prioritize metadata order; check if there's enough space
+             to write them
