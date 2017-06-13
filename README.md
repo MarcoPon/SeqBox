@@ -56,7 +56,7 @@ Same for the other file. Now we put both the JPEG and the SBX files in a floppy 
 ![Disk Layout](http://i.imgur.com/cBoXONY.png)
 
 Normal files (pictures included) are in green, and the two SBX in different shades of blue.
-Then with an hex editor with zap the first system sectors and the FAT (in red)!
+Then with an hex editor we zap the first system sectors and the FAT (in red)!
 Time for recovery!
 
 We start with the free (GPLV v2+) [PhotoRec](http://www.cgsecurity.org/wiki/PhotoRec), which is the go-to tool for these kind of jobs. Parameters are set to "Paranoid : YES (Brute force enabled)" & "Keep corrupted files : Yes", to search the entire data area. 
@@ -225,6 +225,10 @@ Still, the current block format is stable and some precautions have been taken t
 So, as long as a newly created SBX file is checked as OK with SBXDec, it should be OK.
 Also, SBXEnc and SBXDec by default don't overwrite files, and SBXReco uniquify the recovered ones.
 Finally, the file content is not altered in any way (except if a password is used), just re-framed.
+
+## Related tools
+
+Check my [BlockHashLoc](https://github.com/MarcoPon/BlockHashLoc) for a different/sinergic approach to obtaining a similar degree of recoverability, but using a parallel, small hashes file instead of a standalone container. It's probably more suited to protect existing files, when it isn't practical to touch/re-encode them.
 
 ## Links
 
