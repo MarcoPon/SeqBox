@@ -29,7 +29,7 @@ import binascii
 import random
 import hashlib
 
-supported_vers = [1, 2, 3]
+supported_vers = [1, 2, 3, 4]
 
 
 #Some custom exceptions
@@ -61,6 +61,10 @@ class SbxBlock():
             #sure that the SBX file will not be used on a system with
             #smaller blocks
             self.blocksize = 4096
+            self.hdrsize = 16
+        elif ver == 4:
+            #and another for Amiga OFS
+            self.blocksize = 488
             self.hdrsize = 16
         else:
             raise SbxError("version %i not supported" % ver)
